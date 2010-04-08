@@ -1,4 +1,4 @@
 -e svn+http://code.djangoproject.com/svn/django/trunk@12335#egg=Django-1.2_alpha_1-py2.6-dev_r12335
 Fabric==0.9.0
-django-nose==0.0.3
 nose==0.11.3
+-e git://github.com/jbalogh/django-nose.git@70de9dd19e40bd292cdac06c51b6bfe703731504#egg=django-nose
