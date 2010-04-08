@@ -1,14 +1,14 @@
 from setuptools import setup
 
 setup(
-    name='django-yui-minify',
+    name='jingo_minify',
     version='0.1',
     description='A Django app that will concat and minify JS and CSS.',
     author='Dave Dash, James Socol',
     author_email='dd@mozilla.com, james@mozilla.com',
-    url='http://github.com/jsocol/django-yui-minify',
+    url='http://github.com/jsocol/jingo_minify',
     license='BSD',
-    packages=['minify'],
+    packages=['jingo_minify'],
     include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
