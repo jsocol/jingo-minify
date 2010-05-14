@@ -44,3 +44,8 @@ def css(bundle, media="screen,projection,tv", debug=settings.TEMPLATE_DEBUG):
 
     return _build_html(items,
             """<link rel="stylesheet" media="%s" href="%%s" />""" % media)
+
+def build_ids(request):
+    """A context processor for injecting the css/js build ids."""
+    return {'BUILD_ID_CSS': BUILD_ID_CSS, 'BUILD_ID_JS': BUILD_ID_JS}
+
