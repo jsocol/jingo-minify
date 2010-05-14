@@ -8,8 +8,9 @@ setup(
     author_email='dd@mozilla.com, james@mozilla.com',
     url='http://github.com/jsocol/jingo-minify',
     license='BSD',
-    packages=find_packages(),
+    packages=find_packages(exclude=['examples.*']),
     include_package_data=True,
+    package_data={'': ['bin/*.jar']},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
