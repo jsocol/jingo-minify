@@ -1,14 +1,14 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='jingo_minify',
-    version='0.1',
+    version='0.2',
     description='A Django app that will concat and minify JS and CSS.',
     author='Dave Dash, James Socol',
     author_email='dd@mozilla.com, james@mozilla.com',
-    url='http://github.com/jsocol/jingo_minify',
+    url='http://github.com/jsocol/jingo-minify',
     license='BSD',
-    packages=['jingo_minify'],
+    packages=find_packages(),
     include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
