@@ -1,1 +1,2 @@
 include LICENSE
+include jingo_minify/bin/yuicompressor-2.4.2.jar

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='jingo_minify',
-    version='0.3',
+    version='0.3.1',
     description='A Django app that will concat and minify JS and CSS.',
     author='Dave Dash, James Socol',
     author_email='dd@mozilla.com, james@mozilla.com',
@@ -10,7 +10,6 @@ setup(
     license='BSD',
     packages=find_packages(exclude=['examples.*']),
     include_package_data=True,
-    package_data={'': ['bin/*.jar']},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
