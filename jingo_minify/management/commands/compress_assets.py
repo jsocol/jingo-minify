@@ -38,7 +38,7 @@ class Command(BaseCommand):  #pragma: no cover
             settings.ROOT, 'build.py'))
 
         gitid = lambda path: git.repo.Repo(os.path.join(settings.ROOT,
-                path)).log( 'master')[0].id_abbrev
+                path)).log('-1')[0].id_abbrev
 
         with open(build_id_file, 'w') as f:
             f.write('BUILD_ID_CSS = "%s"' % gitid('media/css'))
