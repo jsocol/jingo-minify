@@ -1,5 +1,5 @@
 import os
-from subprocess import call
+from subprocess import call, PIPE
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -20,6 +20,10 @@ class Command(BaseCommand):  #pragma: no cover
                 'yuicompressor-2.4.2.jar')
         path_to_jar = os.path.realpath(os.path.join(*jar_path))
 
+        v = ''
+        if 'verbosity' in options and options['verbosity'] == '2':
+            v = '-v'
+
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
                 concatted_file = path(ftype, '%s-all.%s' % (name, ftype,))
@@ -31,8 +35,8 @@ class Command(BaseCommand):  #pragma: no cover
                      shell=True)
 
                 # Compresses the concatenation.
-                call("%s -jar %s %s -o %s" % (settings.JAVA_BIN, path_to_jar,
-                    concatted_file, compressed_file), shell=True)
+                call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN, path_to_jar,
+                     v, concatted_file, compressed_file), shell=True, stdout=PIPE)
 
         build_id_file = os.path.realpath(os.path.join(
             settings.ROOT, 'build.py'))
