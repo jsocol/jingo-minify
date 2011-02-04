@@ -7,7 +7,7 @@ from jingo import register, env
 try:
     from build import BUILD_ID_CSS, BUILD_ID_JS, BUILD_ID_IMG
 except ImportError:
-    BUILD_ID_CSS = BUILD_ID_JS = 'dev'
+    BUILD_ID_CSS = BUILD_ID_JS = BUILD_ID_IMG = 'dev'
 
 def _build_html(items, wrapping):
     """
