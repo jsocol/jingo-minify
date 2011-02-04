@@ -49,3 +49,5 @@ class Command(BaseCommand):  #pragma: no cover
             f.write("\n")
             f.write('BUILD_ID_JS = "%s"' % gitid('media/js'))
             f.write("\n")
+            f.write('BUILD_ID_IMG = "%s"' % gitid('media/img'))
+            f.write("\n")
