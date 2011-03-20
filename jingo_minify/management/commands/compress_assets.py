@@ -17,7 +17,7 @@ class Command(BaseCommand):  #pragma: no cover
 
     def handle(self, **options):
         jar_path = (os.path.dirname(__file__), '..', '..', 'bin',
-                'yuicompressor-2.4.2.jar')
+                'yuicompressor-2.4.4.jar')
         path_to_jar = os.path.realpath(os.path.join(*jar_path))
 
         v = ''
