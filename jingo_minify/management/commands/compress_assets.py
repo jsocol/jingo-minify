@@ -26,9 +26,21 @@ class Command(BaseCommand):  #pragma: no cover
 
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
+                # Compile LESS files
+                files_all = []
+                for fn in files:
+                    if fn.endswith('.less'):
+                        fp = path(fn.lstrip('/'))
+                        call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
+                             shell=True)
+                        # Outputs a *.less.css file.
+                        files_all.append('%s.css' % fn)
+                    else:
+                        files_all.append(fn)
+
                 concatted_file = path(ftype, '%s-all.%s' % (name, ftype,))
                 compressed_file = path(ftype, '%s-min.%s' % (name, ftype,))
-                real_files = [path(f.lstrip('/')) for f in files]
+                real_files = [path(f.lstrip('/')) for f in files_all]
 
                 # Concats the files.
                 call("cat %s > %s" % (' '.join(real_files), concatted_file),
