@@ -44,7 +44,8 @@ def css(bundle, media="screen,projection,tv", debug=settings.TEMPLATE_DEBUG):
     if debug:
         items = []
         for item in settings.MINIFY_BUNDLES['css'][bundle]:
-            if item.endswith('.less') and settings.LESS_PREPROCESS:
+            if (item.endswith('.less') and
+                getattr(settings, 'LESS_PREPROCESS', False)):
                 build_less(item)
                 items.append('%s.css' % item)
             else:
