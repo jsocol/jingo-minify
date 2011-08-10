@@ -138,6 +138,25 @@ file called ``build.py`` along side ``manage.py`` that contains unique IDs
 based on the SHA of the current git checkout.
 
 
+Cache Busting Individual Images
+==============================
+
+Depending on your CDN, you may need to cache-bust assets referenced in the CSS.
+To do this, add the following to your settings:
+
+    CACHEBUST_IMGS = True
+
+It will go through your CSS, and find any reference to local resources.  It
+will append the short id for the commit that most recently modified the
+resource, so that it only cache busts resources that are actually modified.
+
+
+.. note::
+    This can significantly slow down jingo-minify, since it takes time to
+    get the git commit hash for each item.  It is off by default because
+    of this.
+
+
 Using LESS
 ==========
 
