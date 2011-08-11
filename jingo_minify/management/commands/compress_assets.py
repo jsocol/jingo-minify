@@ -1,5 +1,6 @@
 from optparse import make_option
 import os
+import re
 import time
 from subprocess import call, PIPE
 
@@ -71,9 +72,25 @@ class Command(BaseCommand):  # pragma: no cover
                 compressed_file = path(ftype, '%s-min.%s' % (name, ftype,))
                 real_files = [path(f.lstrip('/')) for f in files_all]
 
+                file_path = os.path.join(settings.ROOT, concatted_file)
+                repo = git.repo.Repo(file_path)
+
                 # Concats the files.
                 call("cat %s > %s" % (' '.join(real_files), concatted_file),
                      shell=True)
+
+                # Cache bust individual images in the CSS
+                cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
+                if cachebust_imgs and ftype == "css":
+                    css_content = ''
+                    with open(concatted_file, 'r') as css_in:
+                        css_content = css_in.read()
+
+                    parse = lambda url: cachebust(url, concatted_file, repo)
+                    css_parsed = re.sub('url\(([^)]*?)\)', parse, css_content)
+
+                    with open(concatted_file, 'w') as css_out:
+                        css_out.write(css_parsed)
 
                 # Compresses the concatenation.
                 call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
@@ -81,3 +98,23 @@ class Command(BaseCommand):  # pragma: no cover
                      shell=True, stdout=PIPE)
 
         self.update_hashes()
+
+
+def cachebust(img, parent, repo):
+    # We get a structural regex object back, hence the "group()"
+    url = img.group(1).strip('"\'')
+    if url.startswith('data:') or url.startswith('http'):
+        return "url(%s)" % url
+
+    url = url.split('?')[0]
+    full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
+                            url)
+
+    try:
+        commit = repo.commits(path=full_url, max_count=1)[0]
+        git_id = commit.id_abbrev
+    except IndexError:
+        return "url(%s)" % url
+
+    return "url(%s?%s)" % (url, git_id)
+
