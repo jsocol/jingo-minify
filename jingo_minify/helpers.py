@@ -3,14 +3,15 @@ import subprocess
 
 from django.conf import settings
 
-from jinja2 import Markup
+import jinja2
 from jingo import register, env
 
 
 try:
-    from build import BUILD_ID_CSS, BUILD_ID_JS, BUILD_ID_IMG
+    from build import BUILD_ID_CSS, BUILD_ID_JS, BUILD_ID_IMG, BUNDLE_HASHES
 except ImportError:
     BUILD_ID_CSS = BUILD_ID_JS = BUILD_ID_IMG = 'dev'
+    BUNDLE_HASHES = {}
 
 path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
 
@@ -18,8 +19,8 @@ def _build_html(items, wrapping):
     """
     Wrap `items` in wrapping.
     """
-    return Markup("\n".join((wrapping % (settings.MEDIA_URL + item)
-                            for item in items)))
+    return jinja2.Markup("\n".join((wrapping % (settings.MEDIA_URL + item)
+                                   for item in items)))
 
 @register.function
 def js(bundle, debug=settings.TEMPLATE_DEBUG):
@@ -30,7 +31,11 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG):
     if debug:
         items = settings.MINIFY_BUNDLES['js'][bundle]
     else:
-        items = ("js/%s-min.js?build=%s" % (bundle, BUILD_ID_JS,),)
+        build_id = BUILD_ID_JS
+        bundle_full = "js:%s" % bundle
+        if bundle_full in BUNDLE_HASHES:
+            build_id = BUNDLE_HASHES[bundle_full]
+        items = ("js/%s-min.js?build=%s" % (bundle, build_id,),)
 
     return _build_html(items, """<script src="%s"></script>""")
 
@@ -51,7 +56,12 @@ def css(bundle, media="screen,projection,tv", debug=settings.TEMPLATE_DEBUG):
             else:
                 items.append(item)
     else:
-        items = ("css/%s-min.css?build=%s" % (bundle, BUILD_ID_CSS,),)
+        build_id = BUILD_ID_CSS
+        bundle_full = "css:%s" % bundle
+        if bundle_full in BUNDLE_HASHES:
+            build_id = BUNDLE_HASHES[bundle_full]
+
+        items = ("css/%s-min.css?build=%s" % (bundle, build_id,),)
 
     return _build_html(items,
             """<link rel="stylesheet" media="%s" href="%%s" />""" % media)
@@ -75,3 +85,4 @@ def build_ids(request):
     """A context processor for injecting the css/js build ids."""
     return {'BUILD_ID_CSS': BUILD_ID_CSS, 'BUILD_ID_JS': BUILD_ID_JS,
             'BUILD_ID_IMG': BUILD_ID_IMG}
+

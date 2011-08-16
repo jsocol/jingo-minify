@@ -1,5 +1,7 @@
+import hashlib
 from optparse import make_option
 import os
+import re
 import time
 from subprocess import call, PIPE
 
@@ -21,7 +23,7 @@ class Command(BaseCommand):  # pragma: no cover
     requires_model_validation = False
     do_update_only = False
 
-    def update_hashes(self, update=False):
+    def update_hashes(self, update=False, bundle_hashes={}):
         def gitid(path):
             id = (git.repo.Repo(os.path.join(settings.ROOT, path))
                      .log('-1')[0].id_abbrev)
@@ -39,6 +41,8 @@ class Command(BaseCommand):  # pragma: no cover
             f.write("\n")
             f.write('BUILD_ID_IMG = "%s"' % gitid('media/img'))
             f.write("\n")
+            f.write('BUNDLE_HASHES = %s' % bundle_hashes)
+            f.write("\n")
 
     def handle(self, **options):
         if options.get('do_update_only', False):
@@ -52,6 +56,8 @@ class Command(BaseCommand):  # pragma: no cover
         v = ''
         if 'verbosity' in options and options['verbosity'] == '2':
             v = '-v'
+
+        bundle_hashes = {}
 
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
@@ -71,13 +77,59 @@ class Command(BaseCommand):  # pragma: no cover
                 compressed_file = path(ftype, '%s-min.%s' % (name, ftype,))
                 real_files = [path(f.lstrip('/')) for f in files_all]
 
+                file_path = os.path.join(settings.ROOT, concatted_file)
+                repo = git.repo.Repo(file_path)
+
                 # Concats the files.
                 call("cat %s > %s" % (' '.join(real_files), concatted_file),
                      shell=True)
+
+                # Cache bust individual images in the CSS
+                cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
+                if cachebust_imgs and ftype == "css":
+                    css_content = ''
+                    with open(concatted_file, 'r') as css_in:
+                        css_content = css_in.read()
+
+                    parse = lambda url: cachebust(url, concatted_file, repo)
+                    css_parsed = re.sub('url\(([^)]*?)\)', parse, css_content)
+
+                    bundle_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
+                    bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
+                    with open(concatted_file, 'w') as css_out:
+                        css_out.write(css_parsed)
 
                 # Compresses the concatenation.
                 call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
                      path_to_jar, v, concatted_file, compressed_file),
                      shell=True, stdout=PIPE)
 
-        self.update_hashes()
+        self.update_hashes(bundle_hashes=bundle_hashes)
+
+
+def githash(repo, url):
+    # Different from gitid(), because it returns the hash for
+    # the file rather than the whole repo.  Use this.
+    try:
+        commit = repo.commits(path=url, max_count=1)[0]
+        git_hash = commit.id_abbrev
+        return git_hash
+    except IndexError:
+        return ""
+
+def cachebust(img, parent, repo):
+    # We get a structural regex object back, hence the "group()"
+    url = img.group(1).strip('"\'')
+    if url.startswith('data:') or url.startswith('http'):
+        return "url(%s)" % url
+
+    url = url.split('?')[0]
+    full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
+                            url)
+
+    git_id = githash(repo, full_url)
+
+    if not git_id:
+        return "url(%s)" % url
+    return "url(%s?%s)" % (url, git_id)
+
