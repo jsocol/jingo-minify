@@ -78,7 +78,6 @@ class Command(BaseCommand):  # pragma: no cover
                 real_files = [path(f.lstrip('/')) for f in files_all]
 
                 file_path = os.path.join(settings.ROOT, concatted_file)
-                repo = git.repo.Repo(file_path)
 
                 # Concats the files.
                 call("cat %s > %s" % (' '.join(real_files), concatted_file),
@@ -87,17 +86,21 @@ class Command(BaseCommand):  # pragma: no cover
                 # Cache bust individual images in the CSS
                 cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
                 if cachebust_imgs and ftype == "css":
+                    repo = git.repo.Repo(file_path)
                     css_content = ''
                     with open(concatted_file, 'r') as css_in:
                         css_content = css_in.read()
 
-                    parse = lambda url: cachebust(url, concatted_file, repo)
+                    parse = lambda url: cachebust(url, concatted_file)
                     css_parsed = re.sub('url\(([^)]*?)\)', parse, css_content)
 
                     bundle_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
                     bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
                     with open(concatted_file, 'w') as css_out:
                         css_out.write(css_parsed)
+                    print "Cache busted images in %s" % file_path
+                elif ftype=="CSS" and not cachebust_imgs:
+                    print "To turn on cache busting, use settings.CACHEBUST_IMGS"
 
                 # Compresses the concatenation.
                 call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
@@ -117,7 +120,7 @@ def githash(repo, url):
     except IndexError:
         return ""
 
-def cachebust(img, parent, repo):
+def cachebust(img, parent):
     # We get a structural regex object back, hence the "group()"
     url = img.group(1).strip('"\'')
     if url.startswith('data:') or url.startswith('http'):
@@ -126,10 +129,15 @@ def cachebust(img, parent, repo):
     url = url.split('?')[0]
     full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
                             url)
+    try:
+        repo = git.repo.Repo(full_url)
+    except:
+        print "Could not find repo for %s" % full_url
+        return "url(%s)" % url
 
     git_id = githash(repo, full_url)
-
     if not git_id:
+        print "Couldn't find a commit for %s" % full_url
         return "url(%s)" % url
     return "url(%s?%s)" % (url, git_id)
 
