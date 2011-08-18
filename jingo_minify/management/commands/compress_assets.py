@@ -114,7 +114,7 @@ def githash(repo, url):
     # Different from gitid(), because it returns the hash for
     # the file rather than the whole repo.  Use this.
     try:
-        commit = repo.commits(path=url, max_count=1)[0]
+        commit = repo.commits(start='HEAD', path=url, max_count=1)[0]
         git_hash = commit.id_abbrev
         return git_hash
     except IndexError:
