@@ -99,7 +99,7 @@ class Command(BaseCommand):  # pragma: no cover
                     with open(concatted_file, 'w') as css_out:
                         css_out.write(css_parsed)
                     print "Cache busted images in %s" % file_path
-                elif ftype=="CSS" and not cachebust_imgs:
+                elif ftype == "css" and not cachebust_imgs:
                     print "To turn on cache busting, use settings.CACHEBUST_IMGS"
 
                 # Compresses the concatenation.
