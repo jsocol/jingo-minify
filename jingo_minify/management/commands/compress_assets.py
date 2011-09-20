@@ -99,13 +99,19 @@ class Command(BaseCommand):  # pragma: no cover
                     with open(concatted_file, 'w') as css_out:
                         css_out.write(css_parsed)
                     print "Cache busted images in %s" % file_path
-                elif ftype=="CSS" and not cachebust_imgs:
+                elif ftype == "css" and not cachebust_imgs:
                     print "To turn on cache busting, use settings.CACHEBUST_IMGS"
 
                 # Compresses the concatenation.
-                call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
-                     path_to_jar, v, concatted_file, compressed_file),
-                     shell=True, stdout=PIPE)
+                if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
+                    call("%s %s -nc %s > %s" % (settings.UGLIFY_BIN, v,
+                                                concatted_file,
+                                                compressed_file),
+                         shell=True, stdout=PIPE)
+                else:
+                    call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
+                         path_to_jar, v, concatted_file, compressed_file),
+                         shell=True, stdout=PIPE)
 
         self.update_hashes(bundle_hashes=bundle_hashes)
 
