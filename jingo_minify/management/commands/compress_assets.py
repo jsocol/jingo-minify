@@ -109,6 +109,12 @@ class Command(BaseCommand):  # pragma: no cover
                                                 compressed_file,
                                                 concatted_file),
                          shell=True, stdout=PIPE)
+                if ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
+                    print "Minifying %s (using clean-css)" % concatted_file
+                    call("%s -o %s %s" % (settings.CLEANCSS_BIN,
+                                          compressed_file,
+                                          concatted_file),
+                         shell=True, stdout=PIPE)
                 else:
                     print "Minifying %s (using YUICompressor)" % concatted_file
                     call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
