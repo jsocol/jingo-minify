@@ -104,11 +104,13 @@ class Command(BaseCommand):  # pragma: no cover
 
                 # Compresses the concatenation.
                 if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
-                    call("%s %s -nc %s > %s" % (settings.UGLIFY_BIN, v,
-                                                concatted_file,
-                                                compressed_file),
+                    print "Minifying %s (using UglifyJS)" % concatted_file
+                    call("%s %s -nc -o %s %s" % (settings.UGLIFY_BIN, v,
+                                                compressed_file,
+                                                concatted_file),
                          shell=True, stdout=PIPE)
                 else:
+                    print "Minifying %s (using YUICompressor)" % concatted_file
                     call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
                          path_to_jar, v, concatted_file, compressed_file),
                          shell=True, stdout=PIPE)
