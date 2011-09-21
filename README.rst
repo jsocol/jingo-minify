@@ -13,8 +13,11 @@ Installing Jingo Minify
 Requirements
 ------------
 
-* **Java**. Jingo Minify uses the YUICompressor internally.
 * **Jingo and Jinja2**. Jingo Minify is not designed for Django templates.
+
+One of the following:
+* **Java**. Jingo Minify uses the YUICompressor internally.
+* **NodeJS**. Optionally, you can use Node minifiers instead.
 
 Optionally:
 
@@ -30,7 +33,11 @@ Configure the following settings::
     JAVA_BIN = '/path/to/java'
 
     # If you want to use less, set this:
-    LESS_BIN = '/path/to/lessc'
+    LESS_BIN = '/path/to/lessc' # Probably just 'lessc'
+
+    # If you want to use node-based minifiers, set these:
+    UGLIFYJS_BIN = '/path/to/uglifyjs' # Probably just 'uglify'
+    CLEANCSS_BIN = '/path/to/cleancss' # Probably just 'cleancss'
 
     # Add jingo_minify to INSTALLED_APPS
     INSTALLED_APPS = (
@@ -138,6 +145,18 @@ file called ``build.py`` along side ``manage.py`` that contains unique IDs
 based on the SHA of the current git checkout.
 
 
+Minifier Options
+----------------
+
+You can choose between YUICompressor (Java) or UglifyJS/clean-css (node) for
+minifying.  You don't have to do anything to get YUICompressor working.
+
+If you want to use the node counterparts, just add `UGLIFYJS_BIN` and
+`CLEANCSS_BIN` (set to the correct paths, of course) to your settings.py.
+You can see the actual syntax if you look at the Installation section of this
+README.
+
+
 Cache Busting Individual Images
 ==============================
 
@@ -181,3 +200,5 @@ automatically in a few ways.
 .. _Jinja2: http://jinja.pocoo.org/docs/
 .. _Django: https://www.djangoproject.com/
 .. _less: http://lesscss.org/
+.. _UglifyJS: https://github.com/mishoo/UglifyJS
+.. _clean-css: https://github.com/GoalSmashers/clean-css
