@@ -102,7 +102,8 @@ class Command(BaseCommand):  # pragma: no cover
     # Check if the file has been changed.  Replace it with tmp.
     def _is_changed(self, concatted_file):
         tmp_concatted = '%s.tmp' % concatted_file
-        if os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted):
+        if (os.path.exists(concatted_file) and
+            os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted)):
             orig_hash = self._file_hash(concatted_file)
             temp_hash = self._file_hash(tmp_concatted)
             return orig_hash != temp_hash
@@ -111,7 +112,8 @@ class Command(BaseCommand):  # pragma: no cover
     # Move the tmp file to where it should be.
     def _clean_tmp(self, concatted_file):
         tmp_concatted = '%s.tmp' % concatted_file
-        os.remove(concatted_file)
+        if os.path.exists(concatted_file):
+            os.remove(concatted_file)
         os.rename(tmp_concatted, concatted_file)
 
     # Cache bust images.  Return a new bundle hash.
