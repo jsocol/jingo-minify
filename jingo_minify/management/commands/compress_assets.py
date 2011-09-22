@@ -23,6 +23,9 @@ class Command(BaseCommand):  # pragma: no cover
     requires_model_validation = False
     do_update_only = False
 
+    checked_repos = {}
+    checked_hash = {}
+
     def update_hashes(self, update=False, bundle_hashes={}):
         def gitid(path):
             id = (git.repo.Repo(os.path.join(settings.ROOT, path))
@@ -59,6 +62,10 @@ class Command(BaseCommand):  # pragma: no cover
 
         bundle_hashes = {}
 
+        cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
+        if not cachebust_imgs:
+            print "To turn on cache busting, use settings.CACHEBUST_IMGS"
+
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
                 # Compile LESS files
@@ -84,14 +91,12 @@ class Command(BaseCommand):  # pragma: no cover
                      shell=True)
 
                 # Cache bust individual images in the CSS
-                cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
                 if cachebust_imgs and ftype == "css":
-                    repo = git.repo.Repo(file_path)
                     css_content = ''
                     with open(concatted_file, 'r') as css_in:
                         css_content = css_in.read()
 
-                    parse = lambda url: cachebust(url, concatted_file)
+                    parse = lambda url: self.cachebust(url, concatted_file)
                     css_parsed = re.sub('url\(([^)]*?)\)', parse, css_content)
 
                     bundle_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
@@ -99,8 +104,6 @@ class Command(BaseCommand):  # pragma: no cover
                     with open(concatted_file, 'w') as css_out:
                         css_out.write(css_parsed)
                     print "Cache busted images in %s" % file_path
-                elif ftype == "css" and not cachebust_imgs:
-                    print "To turn on cache busting, use settings.CACHEBUST_IMGS"
 
                 # Compresses the concatenation.
                 if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
@@ -108,7 +111,7 @@ class Command(BaseCommand):  # pragma: no cover
                     call("%s %s -nc -o %s %s" % (settings.UGLIFY_BIN, v,
                             compressed_file, concatted_file),
                          shell=True, stdout=PIPE)
-                if ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
+                elif ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
                     print "Minifying %s (using clean-css)" % concatted_file
                     call("%s -o %s %s" % (settings.CLEANCSS_BIN,
                             compressed_file, concatted_file),
@@ -121,35 +124,35 @@ class Command(BaseCommand):  # pragma: no cover
 
         self.update_hashes(bundle_hashes=bundle_hashes)
 
+    def get_repo(self, file_path):
+        folder = os.path.dirname(file_path)
+        repo = self.checked_repos[folder] if folder in self.checked_repos else git.repo.Repo(file_path)
+        self.checked_repos[folder] = repo
+        return repo
 
-def githash(repo, url):
-    # Different from gitid(), because it returns the hash for
-    # the file rather than the whole repo.  Use this.
-    try:
-        commit = repo.commits(start='HEAD', path=url, max_count=1)[0]
-        git_hash = commit.id_abbrev
-        return git_hash
-    except IndexError:
-        return ""
+    def file_hash(self, url):
+        if url in self.checked_hash:
+            return self.checked_hash[url]
 
-def cachebust(img, parent):
-    # We get a structural regex object back, hence the "group()"
-    url = img.group(1).strip('"\'')
-    if url.startswith('data:') or url.startswith('http'):
-        return "url(%s)" % url
+        file_hash = ""
+        try:
+            with open(url) as f:
+                file_hash = hashlib.md5(f.read()).hexdigest()[0:7]
+        except IOError:
+            print " - Couldn't find file %s" % full_url
 
-    url = url.split('?')[0]
-    full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
-                            url)
-    try:
-        repo = git.repo.Repo(full_url)
-    except:
-        print "Could not find repo for %s" % full_url
-        return "url(%s)" % url
+        self.checked_hash[url] = file_hash
+        return file_hash
 
-    git_id = githash(repo, full_url)
-    if not git_id:
-        print "Couldn't find a commit for %s" % full_url
-        return "url(%s)" % url
-    return "url(%s?%s)" % (url, git_id)
+    def cachebust(self, img, parent):
+        # We get a structural regex object back, hence the "group()"
+        url = img.group(1).strip('"\'')
+        if url.startswith('data:') or url.startswith('http'):
+            return "url(%s)" % url
+
+        url = url.split('?')[0]
+        full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
+                                url)
+
+        return "url(%s?%s)" % (url, self.file_hash(full_url))
 
