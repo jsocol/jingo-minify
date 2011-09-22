@@ -168,6 +168,10 @@ It will go through your CSS, and find any reference to local resources.  It
 will append the short id for the commit that most recently modified the
 resource, so that it only cache busts resources that are actually modified.
 
+The list of images that couldn't be found can be displayed by running the
+command with `--verbosity=2` (or `-v2`).
+
+    manage.py compress_assets -v2
 
 .. note::
     This is off by default.  It does a lot of I/O, so be careful if you have

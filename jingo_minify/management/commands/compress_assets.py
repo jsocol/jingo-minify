@@ -26,6 +26,8 @@ class Command(BaseCommand):  # pragma: no cover
     checked_hash = {}
     bundle_hashes = {}
 
+    missing_files = 0
+
     def update_hashes(self, update=False):
         def gitid(path):
             id = (git.repo.Repo(os.path.join(settings.ROOT, path))
@@ -56,7 +58,7 @@ class Command(BaseCommand):  # pragma: no cover
                 'yuicompressor-2.4.4.jar')
         path_to_jar = os.path.realpath(os.path.join(*jar_path))
 
-        self.v = '-v' if options.get('verbosity', False) == 2 else ''
+        self.v = '-v' if options.get('verbosity', False) == '2' else ''
 
         cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
         if not cachebust_imgs:
@@ -135,6 +137,12 @@ class Command(BaseCommand):  # pragma: no cover
         # Return bundle hash for cachebusting JS/CSS files.
         file_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
         self.checked_hash[css_file] = file_hash
+
+        if not self.v and self.missing_files:
+           print " - Error finding %s images (-v2 for info)" % (
+                   self.missing_files,)
+           self.missing_files = 0
+
         return file_hash
 
     def _minify(self, ftype, file_in, file_out):
@@ -165,7 +173,9 @@ class Command(BaseCommand):  # pragma: no cover
             with open(url) as f:
                 file_hash = hashlib.md5(f.read()).hexdigest()[0:7]
         except IOError:
-            print " - Couldn't find file %s" % url
+            self.missing_files += 1
+            if self.v:
+                print " - Could not find file %s" % url
 
         self.checked_hash[url] = file_hash
         return file_hash
