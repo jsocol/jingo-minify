@@ -23,7 +23,12 @@ class Command(BaseCommand):  # pragma: no cover
     requires_model_validation = False
     do_update_only = False
 
-    def update_hashes(self, update=False, bundle_hashes={}):
+    checked_hash = {}
+    bundle_hashes = {}
+
+    missing_files = 0
+
+    def update_hashes(self, update=False):
         def gitid(path):
             id = (git.repo.Repo(os.path.join(settings.ROOT, path))
                      .log('-1')[0].id_abbrev)
@@ -41,7 +46,7 @@ class Command(BaseCommand):  # pragma: no cover
             f.write("\n")
             f.write('BUILD_ID_IMG = "%s"' % gitid('media/img'))
             f.write("\n")
-            f.write('BUNDLE_HASHES = %s' % bundle_hashes)
+            f.write('BUNDLE_HASHES = %s' % self.bundle_hashes)
             f.write("\n")
 
     def handle(self, **options):
@@ -53,103 +58,133 @@ class Command(BaseCommand):  # pragma: no cover
                 'yuicompressor-2.4.4.jar')
         path_to_jar = os.path.realpath(os.path.join(*jar_path))
 
-        v = ''
-        if 'verbosity' in options and options['verbosity'] == '2':
-            v = '-v'
+        self.v = '-v' if options.get('verbosity', False) == '2' else ''
 
-        bundle_hashes = {}
+        cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
+        if not cachebust_imgs:
+            print "To turn on cache busting, use settings.CACHEBUST_IMGS"
 
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
-                # Compile LESS files
-                files_all = []
-                for fn in files:
-                    if fn.endswith('.less'):
-                        fp = path(fn.lstrip('/'))
-                        call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
-                             shell=True)
-                        # Outputs a *.less.css file.
-                        files_all.append('%s.css' % fn)
-                    else:
-                        files_all.append(fn)
-
+                # Set the paths to the files
                 concatted_file = path(ftype, '%s-all.%s' % (name, ftype,))
                 compressed_file = path(ftype, '%s-min.%s' % (name, ftype,))
-                real_files = [path(f.lstrip('/')) for f in files_all]
+                files_all = [self._preprocess_file(fn) for fn in files]
 
-                file_path = os.path.join(settings.ROOT, concatted_file)
-
-                # Concats the files.
-                call("cat %s > %s" % (' '.join(real_files), concatted_file),
+                # Concat all the files.
+                tmp_concatted = '%s.tmp' % concatted_file
+                call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
                      shell=True)
 
                 # Cache bust individual images in the CSS
-                cachebust_imgs = getattr(settings, 'CACHEBUST_IMGS', False)
                 if cachebust_imgs and ftype == "css":
-                    repo = git.repo.Repo(file_path)
-                    css_content = ''
-                    with open(concatted_file, 'r') as css_in:
-                        css_content = css_in.read()
+                    bundle_hash = self._cachebust(tmp_concatted, name)
+                    self.bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
 
-                    parse = lambda url: cachebust(url, concatted_file)
-                    css_parsed = re.sub('url\(([^)]*?)\)', parse, css_content)
+                # Compresses the concatenations.
+                is_changed = self._is_changed(concatted_file)
+                self._clean_tmp(concatted_file)
+                if is_changed:
+                    self._minify(ftype, concatted_file, compressed_file)
 
-                    bundle_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
-                    bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
-                    with open(concatted_file, 'w') as css_out:
-                        css_out.write(css_parsed)
-                    print "Cache busted images in %s" % file_path
-                elif ftype == "css" and not cachebust_imgs:
-                    print "To turn on cache busting, use settings.CACHEBUST_IMGS"
+        # Write out the hashes
+        self.update_hashes()
 
-                # Compresses the concatenation.
-                if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
-                    print "Minifying %s (using UglifyJS)" % concatted_file
-                    call("%s %s -nc -o %s %s" % (settings.UGLIFY_BIN, v,
-                            compressed_file, concatted_file),
-                         shell=True, stdout=PIPE)
-                if ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
-                    print "Minifying %s (using clean-css)" % concatted_file
-                    call("%s -o %s %s" % (settings.CLEANCSS_BIN,
-                            compressed_file, concatted_file),
-                         shell=True, stdout=PIPE)
-                else:
-                    print "Minifying %s (using YUICompressor)" % concatted_file
-                    call("%s -jar %s %s %s -o %s" % (settings.JAVA_BIN,
-                            path_to_jar, v, concatted_file, compressed_file),
-                         shell=True, stdout=PIPE)
+    # Preprocess files and return new filenames.
+    def _preprocess_file(self, filename):
+        if filename.endswith('.less'):
+            fp = path(filename.lstrip('/'))
+            call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
+                 shell=True, stdout=PIPE)
+            filename = '%s.css' % filename
+        return path(filename.lstrip('/'))
 
-        self.update_hashes(bundle_hashes=bundle_hashes)
+    # Check if the file has been changed.  Replace it with tmp.
+    def _is_changed(self, concatted_file):
+        tmp_concatted = '%s.tmp' % concatted_file
+        if (os.path.exists(concatted_file) and
+            os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted)):
+            orig_hash = self._file_hash(concatted_file)
+            temp_hash = self._file_hash(tmp_concatted)
+            return orig_hash != temp_hash
+        return True  # Different filesize, so it was definitely changed
 
+    # Move the tmp file to where it should be.
+    def _clean_tmp(self, concatted_file):
+        tmp_concatted = '%s.tmp' % concatted_file
+        if os.path.exists(concatted_file):
+            os.remove(concatted_file)
+        os.rename(tmp_concatted, concatted_file)
 
-def githash(repo, url):
-    # Different from gitid(), because it returns the hash for
-    # the file rather than the whole repo.  Use this.
-    try:
-        commit = repo.commits(start='HEAD', path=url, max_count=1)[0]
-        git_hash = commit.id_abbrev
-        return git_hash
-    except IndexError:
-        return ""
+    # Cache bust images.  Return a new bundle hash.
+    def _cachebust(self, css_file, bundle_name):
+        print "Cache busting images in %s" % css_file
+        css_content = ''
+        with open(css_file, 'r') as css_in:
+            css_content = css_in.read()
 
-def cachebust(img, parent):
-    # We get a structural regex object back, hence the "group()"
-    url = img.group(1).strip('"\'')
-    if url.startswith('data:') or url.startswith('http'):
-        return "url(%s)" % url
+        parse = lambda url: self._cachebust_regex(url, css_file)
+        css_parsed = re.sub('url\(([^)]*?)\)', parse, css_content)
 
-    url = url.split('?')[0]
-    full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
-                            url)
-    try:
-        repo = git.repo.Repo(full_url)
-    except:
-        print "Could not find repo for %s" % full_url
-        return "url(%s)" % url
+        with open(css_file, 'w') as css_out:
+            css_out.write(css_parsed)
 
-    git_id = githash(repo, full_url)
-    if not git_id:
-        print "Couldn't find a commit for %s" % full_url
-        return "url(%s)" % url
-    return "url(%s?%s)" % (url, git_id)
+        # Return bundle hash for cachebusting JS/CSS files.
+        file_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
+        self.checked_hash[css_file] = file_hash
+
+        if not self.v and self.missing_files:
+           print " - Error finding %s images (-v2 for info)" % (
+                   self.missing_files,)
+           self.missing_files = 0
+
+        return file_hash
+
+    # Run the proper minifier on the file.
+    def _minify(self, ftype, file_in, file_out):
+        if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
+            o = {'method': 'UglifyJS', 'bin': settings.UGLIFY_BIN}
+            call("%s %s -nc -o %s %s" % (o['bin'], self.v, file_out, file_in),
+                 shell=True, stdout=PIPE)
+        elif ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
+            o = {'method': 'clean-css', 'bin': settings.CLEANCSS_BIN}
+            call("%s -o %s %s" % (o['bin'], file_out, file_in),
+                 shell=True, stdout=PIPE)
+        else:
+            o = {'method': 'YUI Compressor', 'bin': settings.JAVA_BIN}
+            variables = (o['bin'], path_to_jar, self.v, file_in, file_out)
+            call("%s -jar %s %s %s -o %s" % variables,
+                 shell=True, stdout=PIPE)
+
+        print "Minifying %s (using %s)" % (file_in, o['method'])
+
+    # Open the file and get a hash of it.
+    def _file_hash(self, url):
+        if url in self.checked_hash:
+            return self.checked_hash[url]
+
+        file_hash = ""
+        try:
+            with open(url) as f:
+                file_hash = hashlib.md5(f.read()).hexdigest()[0:7]
+        except IOError:
+            self.missing_files += 1
+            if self.v:
+                print " - Could not find file %s" % url
+
+        self.checked_hash[url] = file_hash
+        return file_hash
+
+    # This is called when we run over the CSS with a regex.
+    def _cachebust_regex(self, img, parent):
+        # We get a structural regex object back, hence the "group()"
+        url = img.group(1).strip('"\'')
+        if url.startswith('data:') or url.startswith('http'):
+            return "url(%s)" % url
+
+        url = url.split('?')[0]
+        full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
+                                url)
+
+        return "url(%s?%s)" % (url, self._file_hash(full_url))
 
