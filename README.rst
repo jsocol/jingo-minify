@@ -170,9 +170,9 @@ resource, so that it only cache busts resources that are actually modified.
 
 
 .. note::
-    This can significantly slow down jingo-minify, since it takes time to
-    get the git commit hash for each item.  It is off by default because
-    of this.
+    This is off by default.  It does a lot of I/O, so be careful if you have
+    large amounts of massive images.  Additionally, it uses a hash of the file.
+    This isn't 100% collision proof, but it should be more than good enough.
 
 
 Using LESS

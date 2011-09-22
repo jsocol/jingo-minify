@@ -81,25 +81,46 @@ class Command(BaseCommand):  # pragma: no cover
 
                 # Cache bust individual images in the CSS
                 if cachebust_imgs and ftype == "css":
-                    bundle_hash = self._cachebust(concatted_file, name)
+                    bundle_hash = self._cachebust(tmp_concatted, name)
                     self.bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
 
                 # Compresses the concatenations.
-                self._minify(ftype, concatted_file, compressed_file)
+                is_changed = self._is_changed(concatted_file)
+                self._clean_tmp(concatted_file)
+                if is_changed:
+                    self._minify(ftype, concatted_file, compressed_file)
 
         # Write out the hashes
         self.update_hashes()
 
-    # Preprocess files and return new filenames.
     def _preprocess_file(self, filename):
+        """ Preprocess files and return new filenames. """
         if filename.endswith('.less'):
             fp = path(filename.lstrip('/'))
-            call('%s %s %s.css' % (settings.LESS_BIN, fp, fp), shell=True, stdout=PIPE)
+            call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
+                 shell=True, stdout=PIPE)
             filename = '%s.css' % filename
         return path(filename.lstrip('/'))
 
-    # Cache bust images.  Return a new bundle hash.
+    def _is_changed(self, concatted_file):
+        """ Check if the file has been changed. """
+        tmp_concatted = '%s.tmp' % concatted_file
+        if (os.path.exists(concatted_file) and
+            os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted)):
+            orig_hash = self._file_hash(concatted_file)
+            temp_hash = self._file_hash(tmp_concatted)
+            return orig_hash != temp_hash
+        return True  # Different filesize, so it was definitely changed
+
+    def _clean_tmp(self, concatted_file):
+        """ Replace the old file with the temp file. """
+        tmp_concatted = '%s.tmp' % concatted_file
+        if os.path.exists(concatted_file):
+            os.remove(concatted_file)
+        os.rename(tmp_concatted, concatted_file)
+
     def _cachebust(self, css_file, bundle_name):
+        """ Cache bust images.  Return a new bundle hash. """
         print "Cache busting images in %s" % css_file
         css_content = ''
         with open(css_file, 'r') as css_in:
@@ -112,10 +133,12 @@ class Command(BaseCommand):  # pragma: no cover
             css_out.write(css_parsed)
 
         # Return bundle hash for cachebusting JS/CSS files.
-        return hashlib.md5(css_parsed).hexdigest()[0:7]
+        file_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
+        self.checked_hash[css_file] = file_hash
+        return file_hash
 
-    # Run the proper minifier on the file.
     def _minify(self, ftype, file_in, file_out):
+        """ Run the proper minifier on the file. """
         if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
             o = {'method': 'UglifyJS', 'bin': settings.UGLIFY_BIN}
             call("%s %s -nc -o %s %s" % (o['bin'], self.v, file_out, file_in),
@@ -132,8 +155,8 @@ class Command(BaseCommand):  # pragma: no cover
 
         print "Minifying %s (using %s)" % (file_in, o['method'])
 
-    # Open the file and get a hash of it.
     def _file_hash(self, url):
+        """ Open the file and get a hash of it. """
         if url in self.checked_hash:
             return self.checked_hash[url]
 
@@ -147,9 +170,8 @@ class Command(BaseCommand):  # pragma: no cover
         self.checked_hash[url] = file_hash
         return file_hash
 
-    # This is called when we run over the CSS with a regex.
     def _cachebust_regex(self, img, parent):
-        # We get a structural regex object back, hence the "group()"
+        """ Run over the regex; img is the structural regex object. """
         url = img.group(1).strip('"\'')
         if url.startswith('data:') or url.startswith('http'):
             return "url(%s)" % url
