@@ -76,11 +76,14 @@ class Command(BaseCommand):  # pragma: no cover
 
                 # Cache bust individual images in the CSS
                 if cachebust_imgs and ftype == "css":
-                    bundle_hash = self._cachebust(concatted_file, name)
+                    bundle_hash = self._cachebust(tmp_concatted, name)
                     self.bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
 
                 # Compresses the concatenations.
-                self._minify(ftype, concatted_file, compressed_file)
+                is_changed = self._is_changed(concatted_file)
+                self._clean_tmp(concatted_file)
+                if is_changed:
+                    self._minify(ftype, concatted_file, compressed_file)
 
         # Write out the hashes
         self.update_hashes()
@@ -89,9 +92,25 @@ class Command(BaseCommand):  # pragma: no cover
     def _preprocess_file(self, filename):
         if filename.endswith('.less'):
             fp = path(filename.lstrip('/'))
-            call('%s %s %s.css' % (settings.LESS_BIN, fp, fp), shell=True, stdout=PIPE)
+            call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
+                 shell=True, stdout=PIPE)
             filename = '%s.css' % filename
         return path(filename.lstrip('/'))
+
+    # Check if the file has been changed.  Replace it with tmp.
+    def _is_changed(self, concatted_file):
+        tmp_concatted = '%s.tmp' % concatted_file
+        if os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted):
+            orig_hash = self._file_hash(concatted_file)
+            temp_hash = self._file_hash(tmp_concatted)
+            return orig_hash != temp_hash
+        return True  # Different filesize, so it was definitely changed
+
+    # Move the tmp file to where it should be.
+    def _clean_tmp(self, concatted_file):
+        tmp_concatted = '%s.tmp' % concatted_file
+        os.remove(concatted_file)
+        os.rename(tmp_concatted, concatted_file)
 
     # Cache bust images.  Return a new bundle hash.
     def _cachebust(self, css_file, bundle_name):
@@ -107,7 +126,9 @@ class Command(BaseCommand):  # pragma: no cover
             css_out.write(css_parsed)
 
         # Return bundle hash for cachebusting JS/CSS files.
-        return hashlib.md5(css_parsed).hexdigest()[0:7]
+        file_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
+        self.checked_hash[css_file] = file_hash
+        return file_hash
 
     # Run the proper minifier on the file.
     def _minify(self, ftype, file_in, file_out):
