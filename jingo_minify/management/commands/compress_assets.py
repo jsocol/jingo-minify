@@ -133,7 +133,8 @@ class Command(BaseCommand):  # pragma: no cover
 
     def _cachebust(self, css_file, bundle_name):
         """ Cache bust images.  Return a new bundle hash. """
-        print "Cache busting images in %s" % css_file
+        print "Cache busting images in %s" % re.sub('.tmp$', '', css_file)
+
         css_content = ''
         with open(css_file, 'r') as css_in:
             css_content = css_in.read()
