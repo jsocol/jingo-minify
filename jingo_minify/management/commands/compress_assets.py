@@ -27,6 +27,7 @@ class Command(BaseCommand):  # pragma: no cover
     bundle_hashes = {}
 
     missing_files = 0
+    minify_skipped = 0
 
     def update_hashes(self, update=False):
         def gitid(path):
@@ -91,9 +92,18 @@ class Command(BaseCommand):  # pragma: no cover
                 self._clean_tmp(concatted_file)
                 if is_changed:
                     self._minify(ftype, concatted_file, compressed_file)
+                elif self.v:
+                    print "File unchanged, skipping minification of %s" % (
+                            concatted_file)
+                else:
+                    self.minify_skipped += 1
 
         # Write out the hashes
         self.update_hashes()
+
+        if not self.v and self.minify_skipped:
+            print "Unchanged files skipped for minification: %s" % (
+                    self.minify_skipped)
 
     def _preprocess_file(self, filename):
         """ Preprocess files and return new filenames. """
