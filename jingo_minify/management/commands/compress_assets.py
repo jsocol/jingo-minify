@@ -56,7 +56,7 @@ class Command(BaseCommand):  # pragma: no cover
 
         jar_path = (os.path.dirname(__file__), '..', '..', 'bin',
                 'yuicompressor-2.4.4.jar')
-        path_to_jar = os.path.realpath(os.path.join(*jar_path))
+        self.path_to_jar = os.path.realpath(os.path.join(*jar_path))
 
         self.v = '-v' if options.get('verbosity', False) == '2' else ''
 
@@ -157,7 +157,7 @@ class Command(BaseCommand):  # pragma: no cover
                  shell=True, stdout=PIPE)
         else:
             o = {'method': 'YUI Compressor', 'bin': settings.JAVA_BIN}
-            variables = (o['bin'], path_to_jar, self.v, file_in, file_out)
+            variables = (o['bin'], self.path_to_jar, self.v, file_in, file_out)
             call("%s -jar %s %s %s -o %s" % variables,
                  shell=True, stdout=PIPE)
 
