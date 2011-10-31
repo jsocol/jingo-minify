@@ -2,8 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='jingo_minify',
-    version='0.4',
+    version='0.5',
     description='A Django app that will concat and minify JS and CSS.',
+    long_description=open('README.rst').read(),
     author='Dave Dash, James Socol',
     author_email='dd@mozilla.com, james@mozilla.com',
     url='http://github.com/jsocol/jingo-minify',

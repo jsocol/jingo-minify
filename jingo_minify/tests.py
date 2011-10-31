@@ -9,8 +9,10 @@ try:
 except:
     BUILD_ID_CSS = BUILD_ID_JS = 'dev'
 
+
 def setup():
     jingo.load_helpers()
+
 
 def test_js_helper():
     """
@@ -25,7 +27,7 @@ def test_js_helper():
     t = env.from_string("{{ js('common', debug=True) }}")
     s = t.render()
 
-    expected ="\n".join(["""<script src="%s"></script>""" % (settings.MEDIA_URL + j)
+    expected ="\n".join(['<script src="%s"></script>' % (settings.MEDIA_URL + j)
                         for j in settings.MINIFY_BUNDLES['js']['common']])
 
     eq_(s, expected)
@@ -33,7 +35,7 @@ def test_js_helper():
     t = env.from_string("{{ js('common', debug=False) }}")
     s = t.render()
 
-    eq_(s, """<script src="%s"></script>""" %
+    eq_(s, '<script src="%s"></script>' %
            (settings.MEDIA_URL + "js/common-min.js?build=%s" % BUILD_ID_JS))
 
 
@@ -50,7 +52,7 @@ def test_css_helper():
     s = t.render()
 
     expected ="\n".join(
-        ["""<link rel="stylesheet" media="screen,projection,tv" href="%s" />"""
+        ['<link rel="stylesheet" media="screen,projection,tv" href="%s" />'
          % (settings.MEDIA_URL + j) for j in
          settings.MINIFY_BUNDLES['css']['common']])
 
@@ -60,5 +62,5 @@ def test_css_helper():
     s = t.render()
 
     eq_(s,
-        """<link rel="stylesheet" media="screen,projection,tv" href="%s" />"""
-        % (settings.MEDIA_URL + "css/common-min.css?build=%s" % BUILD_ID_CSS))
+        '<link rel="stylesheet" media="screen,projection,tv" href="%s" />'
+        % (settings.MEDIA_URL + 'css/common-min.css?build=%s' % BUILD_ID_CSS))

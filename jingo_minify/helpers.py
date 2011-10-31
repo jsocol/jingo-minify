@@ -37,7 +37,7 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG):
             build_id = BUNDLE_HASHES[bundle_full]
         items = ("js/%s-min.js?build=%s" % (bundle, build_id,),)
 
-    return _build_html(items, """<script src="%s"></script>""")
+    return _build_html(items, '<script src="%s"></script>')
 
 
 @register.function
@@ -64,7 +64,7 @@ def css(bundle, media="screen,projection,tv", debug=settings.TEMPLATE_DEBUG):
         items = ("css/%s-min.css?build=%s" % (bundle, build_id,),)
 
     return _build_html(items,
-            """<link rel="stylesheet" media="%s" href="%%s" />""" % media)
+            '<link rel="stylesheet" media="%s" href="%%s" />' % media)
 
 def build_less(item):
     path_css = path('%s.css' % item)

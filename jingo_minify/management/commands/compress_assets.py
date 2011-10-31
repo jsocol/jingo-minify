@@ -106,7 +106,7 @@ class Command(BaseCommand):  # pragma: no cover
                     self.minify_skipped)
 
     def _preprocess_file(self, filename):
-        """ Preprocess files and return new filenames. """
+        """Preprocess files and return new filenames."""
         if filename.endswith('.less'):
             fp = path(filename.lstrip('/'))
             call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
@@ -115,7 +115,7 @@ class Command(BaseCommand):  # pragma: no cover
         return path(filename.lstrip('/'))
 
     def _is_changed(self, concatted_file):
-        """ Check if the file has been changed. """
+        """Check if the file has been changed."""
         tmp_concatted = '%s.tmp' % concatted_file
         if (os.path.exists(concatted_file) and
             os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted)):
@@ -125,14 +125,14 @@ class Command(BaseCommand):  # pragma: no cover
         return True  # Different filesize, so it was definitely changed
 
     def _clean_tmp(self, concatted_file):
-        """ Replace the old file with the temp file. """
+        """Replace the old file with the temp file."""
         tmp_concatted = '%s.tmp' % concatted_file
         if os.path.exists(concatted_file):
             os.remove(concatted_file)
         os.rename(tmp_concatted, concatted_file)
 
     def _cachebust(self, css_file, bundle_name):
-        """ Cache bust images.  Return a new bundle hash. """
+        """Cache bust images.  Return a new bundle hash."""
         print "Cache busting images in %s" % re.sub('.tmp$', '', css_file)
 
         css_content = ''
@@ -157,7 +157,7 @@ class Command(BaseCommand):  # pragma: no cover
         return file_hash
 
     def _minify(self, ftype, file_in, file_out):
-        """ Run the proper minifier on the file. """
+        """Run the proper minifier on the file."""
         if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
             o = {'method': 'UglifyJS', 'bin': settings.UGLIFY_BIN}
             call("%s %s -nc -o %s %s" % (o['bin'], self.v, file_out, file_in),
@@ -175,7 +175,7 @@ class Command(BaseCommand):  # pragma: no cover
         print "Minifying %s (using %s)" % (file_in, o['method'])
 
     def _file_hash(self, url):
-        """ Open the file and get a hash of it. """
+        """Open the file and get a hash of it."""
         if url in self.checked_hash:
             return self.checked_hash[url]
 
@@ -192,7 +192,7 @@ class Command(BaseCommand):  # pragma: no cover
         return file_hash
 
     def _cachebust_regex(self, img, parent):
-        """ Run over the regex; img is the structural regex object. """
+        """Run over the regex; img is the structural regex object."""
         url = img.group(1).strip('"\'')
         if url.startswith('data:') or url.startswith('http'):
             return "url(%s)" % url
