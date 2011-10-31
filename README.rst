@@ -16,10 +16,13 @@ Requirements
 * **Jingo and Jinja2**. Jingo Minify is not designed for Django templates.
 
 One of the following:
-* **Java**. If you want to use YUI Compressor
-* **NodeJS**. If you want to use UglifyJS and Clean-CSS
+
+* **Java**. If you want to use YUI Compressor.
+
+* **NodeJS**. If you want to use UglifyJS_ and clean-css_.
 
 Optionally:
+
 * **less**. Jingo Minify supports less_, if you have ``lessc`` available.
 
 
@@ -150,8 +153,8 @@ Minifier Options
 You can choose between YUICompressor (Java) or UglifyJS/clean-css (node) for
 minifying.  You don't have to do anything to get YUICompressor working.
 
-If you want to use the node counterparts, just add `UGLIFYJS_BIN` and
-`CLEANCSS_BIN` (set to the correct paths, of course) to your settings.py.
+If you want to use the node counterparts, just add ``UGLIFYJS_BIN`` and
+``CLEANCSS_BIN`` (set to the correct paths, of course) to your ``settings.py``.
 You can see the actual syntax if you look at the Installation section of this
 README.
 
@@ -160,7 +163,7 @@ Cache Busting Individual Images
 ==============================
 
 Depending on your CDN, you may need to cache-bust assets referenced in the CSS.
-To do this, add the following to your settings:
+To do this, add the following to your settings::
 
     CACHEBUST_IMGS = True
 
@@ -170,6 +173,8 @@ resource, so that it only cache busts resources that are actually modified.
 
 The list of images that couldn't be found can be displayed by running the
 command with `--verbosity=2` (or `-v2`).
+
+::
 
     manage.py compress_assets -v2
 
