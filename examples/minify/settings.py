@@ -13,6 +13,7 @@ DATABASES = {
 }
 
 INSTALLED_APPS = (
+    'jingo_minify',
     'django_nose',
     'minify',
 )
