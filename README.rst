@@ -38,7 +38,7 @@ Configure the following settings::
     LESS_BIN = '/path/to/lessc' # Probably just 'lessc'
 
     # If you want to use node-based minifiers, set these:
-    UGLIFYJS_BIN = '/path/to/uglifyjs' # Probably just 'uglify'
+    UGLIFY_BIN = '/path/to/uglifyjs' # Probably just 'uglify'
     CLEANCSS_BIN = '/path/to/cleancss' # Probably just 'cleancss'
 
     # Add jingo_minify to INSTALLED_APPS
@@ -153,7 +153,7 @@ Minifier Options
 You can choose between YUICompressor (Java) or UglifyJS/clean-css (node) for
 minifying.  You don't have to do anything to get YUICompressor working.
 
-If you want to use the node counterparts, just add ``UGLIFYJS_BIN`` and
+If you want to use the node counterparts, just add ``UGLIFY_BIN`` and
 ``CLEANCSS_BIN`` (set to the correct paths, of course) to your ``settings.py``.
 You can see the actual syntax if you look at the Installation section of this
 README.
