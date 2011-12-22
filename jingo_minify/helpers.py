@@ -23,11 +23,13 @@ def _build_html(items, wrapping):
                                    for item in items)))
 
 @register.function
-def js(bundle, debug=settings.TEMPLATE_DEBUG):
+def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
     """
     If we are in debug mode, just output a single script tag for each js file.
     If we are not in debug mode, return a script that points at bundle-min.js.
     """
+    attrs = []
+
     if debug:
         items = settings.MINIFY_BUNDLES['js'][bundle]
     else:
@@ -37,7 +39,16 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG):
             build_id = BUNDLE_HASHES[bundle_full]
         items = ("js/%s-min.js?build=%s" % (bundle, build_id,),)
 
-    return _build_html(items, '<script src="%s"></script>')
+    attrs.append('src="%s"')
+
+    if defer:
+        attrs.append('defer')
+
+    if async:
+        attrs.append('async')
+
+    string = '<script %s></script>' % ' '.join(attrs)
+    return _build_html(items, string)
 
 
 @register.function
