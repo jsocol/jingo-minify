@@ -52,11 +52,14 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
 
 
 @register.function
-def css(bundle, media="screen,projection,tv", debug=settings.TEMPLATE_DEBUG):
+def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
     """
     If we are in debug mode, just output a single script tag for each css file.
     If we are not in debug mode, return a script that points at bundle-min.css.
     """
+    if not media:
+        media = getattr(settings, 'CSS_MEDIA_DEFAULT', "screen,projection,tv")
+
     if debug:
         items = []
         for item in settings.MINIFY_BUNDLES['css'][bundle]:
