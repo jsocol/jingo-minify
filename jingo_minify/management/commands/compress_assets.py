@@ -6,7 +6,7 @@ import time
 from subprocess import call, PIPE
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 import git
 
@@ -28,6 +28,7 @@ class Command(BaseCommand):  # pragma: no cover
 
     missing_files = 0
     minify_skipped = 0
+    cmd_errors = False
 
     def update_hashes(self, update=False):
         def gitid(path):
@@ -79,7 +80,7 @@ class Command(BaseCommand):  # pragma: no cover
 
                 # Concat all the files.
                 tmp_concatted = '%s.tmp' % concatted_file
-                call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
+                self._call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
                      shell=True)
 
                 # Cache bust individual images in the CSS
@@ -104,12 +105,21 @@ class Command(BaseCommand):  # pragma: no cover
         if not self.v and self.minify_skipped:
             print "Unchanged files skipped for minification: %s" % (
                     self.minify_skipped)
+        if self.cmd_errors:
+            raise CommandError('one or more minify commands exited with a '
+                               'non-zero status. See output above for errors.')
+
+    def _call(self, *args, **kw):
+        exit = call(*args, **kw)
+        if exit != 0:
+            self.cmd_errors = True
+        return exit
 
     def _preprocess_file(self, filename):
         """Preprocess files and return new filenames."""
         if filename.endswith('.less'):
             fp = path(filename.lstrip('/'))
-            call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
+            self._call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
                  shell=True, stdout=PIPE)
             filename = '%s.css' % filename
         return path(filename.lstrip('/'))
@@ -160,16 +170,16 @@ class Command(BaseCommand):  # pragma: no cover
         """Run the proper minifier on the file."""
         if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
             o = {'method': 'UglifyJS', 'bin': settings.UGLIFY_BIN}
-            call("%s %s -o %s %s" % (o['bin'], self.v, file_out, file_in),
+            self._call("%s %s -o %s %s" % (o['bin'], self.v, file_out, file_in),
                  shell=True, stdout=PIPE)
         elif ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
             o = {'method': 'clean-css', 'bin': settings.CLEANCSS_BIN}
-            call("%s -o %s %s" % (o['bin'], file_out, file_in),
+            self._call("%s -o %s %s" % (o['bin'], file_out, file_in),
                  shell=True, stdout=PIPE)
         else:
             o = {'method': 'YUI Compressor', 'bin': settings.JAVA_BIN}
             variables = (o['bin'], self.path_to_jar, self.v, file_in, file_out)
-            call("%s -jar %s %s %s -o %s" % variables,
+            self._call("%s -jar %s %s %s -o %s" % variables,
                  shell=True, stdout=PIPE)
 
         print "Minifying %s (using %s)" % (file_in, o['method'])
