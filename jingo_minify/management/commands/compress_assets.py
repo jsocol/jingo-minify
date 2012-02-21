@@ -57,7 +57,7 @@ class Command(BaseCommand):  # pragma: no cover
             return
 
         jar_path = (os.path.dirname(__file__), '..', '..', 'bin',
-                'yuicompressor-2.4.4.jar')
+                'yuicompressor-2.4.7.jar')
         self.path_to_jar = os.path.realpath(os.path.join(*jar_path))
 
         self.v = '-v' if options.get('verbosity', False) == '2' else ''
