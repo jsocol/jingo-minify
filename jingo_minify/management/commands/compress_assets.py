@@ -1,5 +1,6 @@
 import hashlib
 from optparse import make_option
+import shutil
 import os
 import re
 import time
@@ -7,11 +8,12 @@ from subprocess import call, PIPE
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+import hashlib
+from os.path import normpath, walk, isdir, isfile, dirname, basename,\
+    exists as path_exists, join as path_join, getsize
 
-import git
 
-
-path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
+path = lambda *a: os.path.join(settings.STATIC_ROOT, *a)
 
 
 class Command(BaseCommand):  # pragma: no cover
@@ -31,22 +33,24 @@ class Command(BaseCommand):  # pragma: no cover
     cmd_errors = False
 
     def update_hashes(self, update=False):
-        def gitid(path):
-            id = (git.repo.Repo(os.path.join(settings.ROOT, path))
-                     .log('-1')[0].id_abbrev)
-            if update:
-                # Adds a time based hash on to the build id.
-                return '%s-%s' % (id, hex(int(time.time()))[2:])
-            return id
-
-        build_id_file = os.path.realpath(os.path.join(settings.ROOT,
+        build_id_file = os.path.realpath(os.path.join(settings.PROJECT_ROOT,
                                                       'build.py'))
+        file_paths = {
+            'css': [],
+            'js': [],
+        }
+        for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
+            for files in bundle.itervalues():
+                full_paths = map(path, files)
+                file_paths[ftype].extend(full_paths)
+
         with open(build_id_file, 'w') as f:
-            f.write('BUILD_ID_CSS = "%s"' % gitid('media/css'))
+            settings.MINIFY_BUNDLES
+            f.write('BUILD_ID_CSS = "%s"' % self._path_checksum(file_paths['css']))
             f.write("\n")
-            f.write('BUILD_ID_JS = "%s"' % gitid('media/js'))
+            f.write('BUILD_ID_JS = "%s"' % self._path_checksum(file_paths['js']))
             f.write("\n")
-            f.write('BUILD_ID_IMG = "%s"' % gitid('media/img'))
+            f.write('BUILD_ID_IMG = "%s"' % self._path_checksum(path('img')))
             f.write("\n")
             f.write('BUNDLE_HASHES = %s' % self.bundle_hashes)
             f.write("\n")
@@ -80,8 +84,7 @@ class Command(BaseCommand):  # pragma: no cover
 
                 # Concat all the files.
                 tmp_concatted = '%s.tmp' % concatted_file
-                self._call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
-                     shell=True)
+                self._concat_files(files_all, tmp_concatted)
 
                 # Cache bust individual images in the CSS
                 if cachebust_imgs and ftype == "css":
@@ -109,11 +112,52 @@ class Command(BaseCommand):  # pragma: no cover
             raise CommandError('one or more minify commands exited with a '
                                'non-zero status. See output above for errors.')
 
+
+    def _path_checksum(self, paths):
+        """
+        Recursively calculates a checksum representing the contents of all files
+        found with a sequence of file and/or directory paths.
+        """
+        if not hasattr(paths, '__iter__'):
+            paths = [paths]
+
+        def _update_checksum(checksum, dirname, filenames):
+            for filename in sorted(filenames):
+                path = path_join(dirname, filename)
+                if isfile(path):
+                    checksum.update("blob %u\0" % getsize(path))
+                    fh = open(path, 'rb')
+                    while 1:
+                        buf = fh.read(4096)
+                        if not buf : break
+                        checksum.update(buf)
+                    fh.close()
+
+        checksum = hashlib.sha1()
+
+        for path in sorted([normpath(f) for f in paths]):
+            if path_exists(path):
+                if isdir(path):
+                    walk(path, _update_checksum, checksum)
+                elif isfile(path):
+                    _update_checksum(checksum, dirname(path), [basename(path)])
+            else:
+                print "Can't count checksum of path '%s'. Path doesn't exist." % (path)
+
+        return checksum.hexdigest()
+
+
     def _call(self, *args, **kw):
         exit = call(*args, **kw)
         if exit != 0:
             self.cmd_errors = True
         return exit
+
+    def _concat_files(self, from_files, to_file):
+        destination = open(to_file, 'wb')
+        for filename in from_files:
+            shutil.copyfileobj(open(filename, 'rb'), destination)
+        destination.close()
 
     def _preprocess_file(self, filename):
         """Preprocess files and return new filenames."""
@@ -208,7 +252,7 @@ class Command(BaseCommand):  # pragma: no cover
             return "url(%s)" % url
 
         url = url.split('?')[0]
-        full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
+        full_url = os.path.join(settings.PROJECT_ROOT, os.path.dirname(parent),
                                 url)
 
         return "url(%s?%s)" % (url, self._file_hash(full_url))

@@ -31,6 +31,10 @@ Installation
 
 Configure the following settings::
 
+    # Root of your Django project, Jingo Minify generate there build.py file
+    # Generally path where is placed your manage.py, settings.py...
+    PROJECT_ROOT = '/path/to/your/django/project/'
+
     # Jingo Minify uses the YUICompressor internally, so needs Java.
     JAVA_BIN = '/path/to/java'
 
@@ -80,7 +84,7 @@ Bundles are set up in the ``MINIFY_BUNDLES`` setting. For example::
     }
 
 This creates one CSS bundle and one JS bundle, both called ``common``. The file
-paths are relative to the ``MEDIA_ROOT`` setting.
+paths are relative to the ``STATIC_ROOT`` setting.
 
 You can create any number or combination of CSS and JS bundles, and include any
 number of files in each, but **do not create empty bundles**.
@@ -136,11 +140,16 @@ This would create a ``<link>`` tag with ``media="print"``.
 Bundling and Minifying
 ======================
 
+If you're serving collected static files from a single location according to
+Django-static-files_, you have to run command for collecting static files::
+
+    ./manage.py collectstatic
+
 To bundle and minify your CSS and JS, run the management command::
 
     ./manage.py compress_assets
 
-This will create two files per bundle in your ``media`` directory, one that
+This will create two files per bundle in your ``STATIC_ROOT`` directory, one that
 looks like ``bundle-all.js`` (or ``.css``) and one that looks like
 ``bundle-min.js``. Only the ``*-min.*`` version will be used. It also creates a
 file called ``build.py`` along side ``manage.py`` that contains unique IDs
@@ -210,3 +219,4 @@ automatically in a few ways.
 .. _less: http://lesscss.org/
 .. _UglifyJS: https://github.com/mishoo/UglifyJS
 .. _clean-css: https://github.com/GoalSmashers/clean-css
+.. _Django-static-files: https://docs.djangoproject.com/en/dev/howto/static-files/

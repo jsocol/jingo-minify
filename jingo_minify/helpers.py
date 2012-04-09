@@ -13,7 +13,7 @@ except ImportError:
     BUILD_ID_CSS = BUILD_ID_JS = BUILD_ID_IMG = 'dev'
     BUNDLE_HASHES = {}
 
-path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
+path = lambda *a: os.path.join(settings.STATIC_ROOT, *a)
 
 def _build_html(items, wrapping):
     """
@@ -31,13 +31,13 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
     attrs = []
 
     if debug:
-        items = settings.MINIFY_BUNDLES['js'][bundle]
+        items = [settings.STATIC_URL + i for i in settings.MINIFY_BUNDLES['js'][bundle]]
     else:
         build_id = BUILD_ID_JS
         bundle_full = "js:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        items = ("js/%s-min.js?build=%s" % (bundle, build_id,),)
+        items = ("%sjs/%s-min.js?build=%s" % (settings.STATIC_URL, bundle, build_id,),)
 
     attrs.append('src="%s"')
 
@@ -63,19 +63,20 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
     if debug:
         items = []
         for item in settings.MINIFY_BUNDLES['css'][bundle]:
+            item = settings.STATIC_URL + item
             if (item.endswith('.less') and
                 getattr(settings, 'LESS_PREPROCESS', False)):
                 build_less(item)
                 items.append('%s.css' % item)
             else:
                 items.append(item)
+        print items
     else:
         build_id = BUILD_ID_CSS
         bundle_full = "css:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-
-        items = ("css/%s-min.css?build=%s" % (bundle, build_id,),)
+        items = ("%scss/%s-min.css?build=%s" % (settings.STATIC_URL, bundle, build_id,),)
 
     return _build_html(items,
             '<link rel="stylesheet" media="%s" href="%%s" />' % media)
