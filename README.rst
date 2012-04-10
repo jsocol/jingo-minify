@@ -41,6 +41,9 @@ Configure the following settings::
     UGLIFY_BIN = '/path/to/uglifyjs' # Probably just 'uglify'
     CLEANCSS_BIN = '/path/to/cleancss' # Probably just 'cleancss'
 
+    # Optional: If you want to store assets outside of MEDIA_ROOT:
+    JINGO_ASSET_ROOT = '/path/to/asset/root'
+
     # Add jingo_minify to INSTALLED_APPS
     INSTALLED_APPS = (
         # ...
