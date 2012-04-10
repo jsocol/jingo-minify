@@ -11,7 +11,8 @@ from django.core.management.base import BaseCommand, CommandError
 import git
 
 
-path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
+JINGO_ASSET_ROOT = getattr(settings, 'JINGO_ASSET_ROOT', settings.MEDIA_ROOT)
+path = lambda *a: os.path.join(JINGO_ASSET_ROOT, *a)
 
 
 class Command(BaseCommand):  # pragma: no cover
