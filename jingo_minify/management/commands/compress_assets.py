@@ -80,6 +80,10 @@ class Command(BaseCommand):  # pragma: no cover
 
                 # Concat all the files.
                 tmp_concatted = '%s.tmp' % concatted_file
+                if len(files_all) == 0:
+                    raise CommandError('No input files specified in ' +
+                        'MINIFY_BUNDLES["%s"]["%s"] in settings.py!' %
+                        (ftype, name))
                 self._call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
                      shell=True)
 
