@@ -116,6 +116,7 @@ class Command(BaseCommand):  # pragma: no cover
     def _call(self, *args, **kw):
         exit = call(*args, **kw)
         if exit != 0:
+            print '%s exited with a non-zero status.' % args
             self.cmd_errors = True
         return exit
 
