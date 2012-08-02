@@ -20,9 +20,9 @@ INSTALLED_APPS = (
 
 MINIFY_BUNDLES = {
     'css': {
-        'common': [],
+        'common': ['css/test.css'],
     },
     'js': {
-        'common': [],
+        'common': ['js/test.js'],
     },
 }

@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 
 from django.conf import settings
 
@@ -31,7 +32,9 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
     attrs = []
 
     if debug:
-        items = settings.MINIFY_BUNDLES['js'][bundle]
+        # Add timestamp to avoid caching.
+        items = ['%s?build=%s' % (item, int(time.time())) for item in
+                 settings.MINIFY_BUNDLES['js'][bundle]]
     else:
         build_id = BUILD_ID_JS
         bundle_full = "js:%s" % bundle
@@ -69,6 +72,9 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
                 items.append('%s.css' % item)
             else:
                 items.append(item)
+
+        # Add timestamp to avoid caching.
+        items = ['%s?build=%s' % (item, int(time.time())) for item in items]
     else:
         build_id = BUILD_ID_CSS
         bundle_full = "css:%s" % bundle
