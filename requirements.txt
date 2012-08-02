@@ -3,3 +3,4 @@ jingo==0.4
 Fabric==1.0.1
 nose==1.0.0
 -e git://github.com/jbalogh/django-nose.git@83c7867c3f90#egg=django-nose
+mock==0.8.0
