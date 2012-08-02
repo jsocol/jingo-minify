@@ -7,11 +7,9 @@ from subprocess import call, PIPE
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from jingo_minify.helpers import static_path
 
 import git
-
-
-path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
 
 
 class Command(BaseCommand):  # pragma: no cover
@@ -74,8 +72,8 @@ class Command(BaseCommand):  # pragma: no cover
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
                 # Set the paths to the files
-                concatted_file = path(ftype, '%s-all.%s' % (name, ftype,))
-                compressed_file = path(ftype, '%s-min.%s' % (name, ftype,))
+                concatted_file = static_path(ftype, '%s-all.%s' % (name, ftype,))
+                compressed_file = static_path(ftype, '%s-min.%s' % (name, ftype,))
                 files_all = [self._preprocess_file(fn) for fn in files]
 
                 # Concat all the files.
@@ -123,11 +121,11 @@ class Command(BaseCommand):  # pragma: no cover
     def _preprocess_file(self, filename):
         """Preprocess files and return new filenames."""
         if filename.endswith('.less'):
-            fp = path(filename.lstrip('/'))
+            fp = static_path(filename.lstrip('/'))
             self._call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
                  shell=True, stdout=PIPE)
             filename = '%s.css' % filename
-        return path(filename.lstrip('/'))
+        return static_path(filename.lstrip('/'))
 
     def _is_changed(self, concatted_file):
         """Check if the file has been changed."""
@@ -165,9 +163,9 @@ class Command(BaseCommand):  # pragma: no cover
         self.checked_hash[css_file] = file_hash
 
         if not self.v and self.missing_files:
-           print " - Error finding %s images (-v2 for info)" % (
+            print " - Error finding %s images (-v2 for info)" % (
                    self.missing_files,)
-           self.missing_files = 0
+            self.missing_files = 0
 
         return file_hash
 

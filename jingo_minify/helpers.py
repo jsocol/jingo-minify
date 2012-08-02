@@ -4,7 +4,7 @@ import subprocess
 from django.conf import settings
 
 import jinja2
-from jingo import register, env
+from jingo import register
 
 
 try:
@@ -13,14 +13,17 @@ except ImportError:
     BUILD_ID_CSS = BUILD_ID_JS = BUILD_ID_IMG = 'dev'
     BUNDLE_HASHES = {}
 
-path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
+static_path_prefix = getattr(settings, 'STATIC_URL', None) or settings.MEDIA_URL
+static_path = lambda *a: os.path.join(static_path_prefix, *a)
+
 
 def _build_html(items, wrapping):
     """
     Wrap `items` in wrapping.
     """
-    return jinja2.Markup("\n".join((wrapping % (settings.MEDIA_URL + item)
+    return jinja2.Markup("\n".join((wrapping % (static_path_prefix + item)
                                    for item in items)))
+
 
 @register.function
 def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
@@ -80,11 +83,12 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
     return _build_html(items,
             '<link rel="stylesheet" media="%s" href="%%s" />' % media)
 
-def build_less(item):
-    path_css = path('%s.css' % item)
-    path_less = path(item)
 
-    updated_less = os.path.getmtime(path(item))
+def build_less(item):
+    path_css = static_path('%s.css' % item)
+    path_less = static_path(item)
+
+    updated_less = os.path.getmtime(static_path(item))
     updated_css = 0  # If the file doesn't exist, force a refresh.
     if os.path.exists(path_css):
         updated_css = os.path.getmtime(path_css)
@@ -95,8 +99,8 @@ def build_less(item):
             subprocess.Popen([settings.LESS_BIN, path_less],
                              stdout=output)
 
+
 def build_ids(request):
     """A context processor for injecting the css/js build ids."""
     return {'BUILD_ID_CSS': BUILD_ID_CSS, 'BUILD_ID_JS': BUILD_ID_JS,
             'BUILD_ID_IMG': BUILD_ID_IMG}
-
