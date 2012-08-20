@@ -38,8 +38,46 @@ def test_js_helper(time):
     t = env.from_string("{{ js('common', debug=False) }}")
     s = t.render()
 
+    eq_(s, '<script src="%sjs/common-min.js?build=%s"></script>' %
+           (settings.MEDIA_URL, BUILD_ID_JS))
+
+    t = env.from_string("{{ js('common_url', debug=True) }}")
+    s = t.render()
+
     eq_(s, '<script src="%s"></script>' %
-           (settings.MEDIA_URL + "js/common-min.js?build=%s" % BUILD_ID_JS))
+           "http://example.com/test.js?build=1")
+
+    t = env.from_string("{{ js('common_url', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<script src="%sjs/common_url-min.js?build=%s"></script>' %
+           (settings.MEDIA_URL, BUILD_ID_JS))
+
+    t = env.from_string("{{ js('common_protocol_less_url', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<script src="%s"></script>' %
+           "//example.com/test.js?build=1")
+
+    t = env.from_string("{{ js('common_protocol_less_url', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<script src="%sjs/common_protocol_less_url-min.js?build=%s">'
+           '</script>' % (settings.MEDIA_URL, BUILD_ID_JS))
+
+    t = env.from_string("{{ js('common_bundle', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<script src="js/test.js?build=1"></script>\n'
+           '<script src="http://example.com/test.js?build=1"></script>\n'
+           '<script src="//example.com/test.js?build=1"></script>\n'
+           '<script src="https://example.com/test.js?build=1"></script>')
+
+    t = env.from_string("{{ js('common_bundle', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<script src="%sjs/common_bundle-min.js?build=%s"></script>' %
+           (settings.MEDIA_URL, BUILD_ID_JS))
 
 
 @patch('jingo_minify.helpers.time.time')
@@ -67,5 +105,53 @@ def test_css_helper(time):
     s = t.render()
 
     eq_(s,
-        '<link rel="stylesheet" media="screen,projection,tv" href="%s" />'
-        % (settings.MEDIA_URL + 'css/common-min.css?build=%s' % BUILD_ID_CSS))
+        '<link rel="stylesheet" media="screen,projection,tv" '
+        'href="%scss/common-min.css?build=%s" />'
+        % (settings.MEDIA_URL, BUILD_ID_CSS))
+
+    t = env.from_string("{{ css('common_url', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="http://example.com/test.css?build=1" />')
+
+    t = env.from_string("{{ css('common_url', debug=False) }}")
+    s = t.render()
+
+    eq_(s,
+        '<link rel="stylesheet" media="screen,projection,tv" '
+        'href="%scss/common_url-min.css?build=%s" />'
+        % (settings.MEDIA_URL, BUILD_ID_CSS))
+
+    t = env.from_string("{{ css('common_protocol_less_url', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="//example.com/test.css?build=1" />')
+
+    t = env.from_string("{{ css('common_protocol_less_url', debug=False) }}")
+    s = t.render()
+
+    eq_(s,
+        '<link rel="stylesheet" media="screen,projection,tv" '
+        'href="%scss/common_protocol_less_url-min.css?build=%s" />'
+        % (settings.MEDIA_URL, BUILD_ID_CSS))
+
+    t = env.from_string("{{ css('common_bundle', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="css/test.css?build=1" />\n'
+           '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="http://example.com/test.css?build=1" />\n'
+           '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="//example.com/test.css?build=1" />\n'
+           '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="https://example.com/test.css?build=1" />')
+
+    t = env.from_string("{{ css('common_bundle', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="%scss/common_bundle-min.css?build=%s" />' %
+           (settings.MEDIA_URL, BUILD_ID_CSS))
