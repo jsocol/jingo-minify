@@ -2,7 +2,9 @@ import hashlib
 from optparse import make_option
 import os
 import re
+import shutil
 import time
+import urllib2
 from subprocess import call, PIPE
 
 from django.conf import settings
@@ -29,6 +31,7 @@ class Command(BaseCommand):  # pragma: no cover
     missing_files = 0
     minify_skipped = 0
     cmd_errors = False
+    ext_media_path = os.path.join(settings.MEDIA_ROOT, 'external')
 
     def update_hashes(self, update=False):
         def gitid(path):
@@ -120,8 +123,50 @@ class Command(BaseCommand):  # pragma: no cover
             self.cmd_errors = True
         return exit
 
+    def _get_url_or_path(self, item):
+        """
+        Determine whether this is a URL or a relative path.
+        """
+        if item.startswith('//'):
+            return 'http:%s' % item
+        elif item.startswith(('http', 'https')):
+            return item
+        return None
+
     def _preprocess_file(self, filename):
         """Preprocess files and return new filenames."""
+        url = self._get_url_or_path(filename)
+        if url:
+            # External files from URLs are placed into a subdirectory.
+            if not os.path.exists(self.ext_media_path):
+                os.makedirs(self.ext_media_path)
+
+            filename = os.path.basename(url)
+            if filename.endswith(('.js', '.css', '.less')):
+                fp = path(filename.lstrip('/'))
+                file_path = '%s/%s' % (self.ext_media_path, filename)
+
+                try:
+                    req = urllib2.urlopen(url)
+                    print ' - Fetching %s ...' % url
+                except urllib2.HTTPError, e:
+                    print ' - HTTP Error %s for %s, %s' % (url, filename,
+                                                           str(e.code))
+                    return ''
+                except urllib2.URLError, e:
+                    print ' - Invalid URL %s for %s, %s' % (url, filename,
+                                                            str(e.reason))
+                    return ''
+
+                with open(file_path, 'w+') as fp:
+                    try:
+                        shutil.copyfileobj(req, fp)
+                    except shutil.Error:
+                        print ' - Could not copy file %s' % filename
+                filename = os.path.join('external', filename)
+            else:
+                print ' - Not a valid remote file %s' % filename
+
         if filename.endswith('.less'):
             fp = path(filename.lstrip('/'))
             self._call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
@@ -217,4 +262,3 @@ class Command(BaseCommand):  # pragma: no cover
                                 url)
 
         return "url(%s?%s)" % (url, self._file_hash(full_url))
-

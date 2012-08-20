@@ -16,12 +16,23 @@ except ImportError:
 
 path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
 
+
+def _get_item_path(item):
+    """
+    Determine whether to return a relative path or a URL.
+    """
+    if item.startswith(('//', 'http', 'https')):
+        return item
+    return settings.MEDIA_URL + item
+
+
 def _build_html(items, wrapping):
     """
     Wrap `items` in wrapping.
     """
-    return jinja2.Markup("\n".join((wrapping % (settings.MEDIA_URL + item)
+    return jinja2.Markup('\n'.join((wrapping % (_get_item_path(item))
                                    for item in items)))
+
 
 @register.function
 def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
@@ -40,7 +51,7 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
         bundle_full = "js:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        items = ("js/%s-min.js?build=%s" % (bundle, build_id,),)
+        items = ('js/%s-min.js?build=%s' % (bundle, build_id,),)
 
     attrs.append('src="%s"')
 
@@ -81,7 +92,7 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
 
-        items = ("css/%s-min.css?build=%s" % (bundle, build_id,),)
+        items = ('css/%s-min.css?build=%s' % (bundle, build_id,),)
 
     return _build_html(items,
             '<link rel="stylesheet" media="%s" href="%%s" />' % media)
