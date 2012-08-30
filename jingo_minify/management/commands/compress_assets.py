@@ -76,10 +76,16 @@ class Command(BaseCommand):  # pragma: no cover
 
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
-                # Set the paths to the files
+                # Set the paths to the files.
                 concatted_file = path(ftype, '%s-all.%s' % (name, ftype,))
                 compressed_file = path(ftype, '%s-min.%s' % (name, ftype,))
-                files_all = [self._preprocess_file(fn) for fn in files]
+
+                files_all = []
+                for fn in files:
+                    processed = self._preprocess_file(fn)
+                    # If the file can't be processed, we skip it.
+                    if processed is not None:
+                        files_all.append(processed)
 
                 # Concat all the files.
                 tmp_concatted = '%s.tmp' % concatted_file
@@ -90,7 +96,7 @@ class Command(BaseCommand):  # pragma: no cover
                 self._call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
                      shell=True)
 
-                # Cache bust individual images in the CSS
+                # Cache bust individual images in the CSS.
                 if cachebust_imgs and ftype == "css":
                     bundle_hash = self._cachebust(tmp_concatted, name)
                     self.bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
@@ -152,11 +158,11 @@ class Command(BaseCommand):  # pragma: no cover
                 except urllib2.HTTPError, e:
                     print ' - HTTP Error %s for %s, %s' % (url, filename,
                                                            str(e.code))
-                    return ''
+                    return None
                 except urllib2.URLError, e:
                     print ' - Invalid URL %s for %s, %s' % (url, filename,
                                                             str(e.reason))
-                    return ''
+                    return None
 
                 with open(file_path, 'w+') as fp:
                     try:
@@ -166,6 +172,7 @@ class Command(BaseCommand):  # pragma: no cover
                 filename = os.path.join('external', filename)
             else:
                 print ' - Not a valid remote file %s' % filename
+                return None
 
         if filename.endswith('.less'):
             fp = path(filename.lstrip('/'))
