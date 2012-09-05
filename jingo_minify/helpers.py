@@ -3,9 +3,10 @@ import subprocess
 import time
 
 from django.conf import settings
+from django.contrib.staticfiles.finders import find as static_finder
 
 import jinja2
-from jingo import register, env
+from jingo import register
 
 
 try:
@@ -39,7 +40,28 @@ def get_media_url():
     return settings.MEDIA_URL
 
 
-path = lambda *a: os.path.join(get_media_root(), *a)
+def get_path(path):
+    """Get a system path for a given file.
+
+    This properly handles storing files in `project/app/static`, and any other
+    location that Django's static files system supports.
+
+    ``path`` should be relative to ``STATIC_ROOT``.
+
+    """
+    debug = getattr(settings, 'DEBUG', False)
+    static = getattr(settings, 'JINGO_MINIFY_USE_STATIC', False)
+
+    full_path = os.path.join(get_media_root(), path)
+
+    if debug and static:
+        found_path = static_finder(path)
+        # If the path is not found by Django's static finder (like we are
+        # trying to get an output path), it returns None, so fall back.
+        if found_path is not None:
+            full_path = found_path
+
+    return full_path
 
 
 def _get_item_path(item):
@@ -122,20 +144,32 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
     return _build_html(items,
             '<link rel="stylesheet" media="%s" href="%%s" />' % media)
 
-def build_less(item):
-    path_css = path('%s.css' % item)
-    path_less = path(item)
 
-    updated_less = os.path.getmtime(path(item))
+def ensure_path_exists(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        # If the directory already exists, that is fine. Otherwise re-raise.
+        if e.errno != os.errno.EEXIST:
+            raise e
+
+
+def build_less(item):
+    path_css = get_path('%s.css' % item)
+    path_less = get_path(item)
+
+    updated_less = os.path.getmtime(get_path(item))
     updated_css = 0  # If the file doesn't exist, force a refresh.
     if os.path.exists(path_css):
         updated_css = os.path.getmtime(path_css)
 
     # Is the uncompiled version newer?  Then recompile!
     if updated_less > updated_css:
+        ensure_path_exists(os.path.dirname(path_css))
         with open(path_css, 'w') as output:
             subprocess.Popen([settings.LESS_BIN, path_less],
                              stdout=output)
+
 
 def build_ids(request):
     """A context processor for injecting the css/js build ids."""
