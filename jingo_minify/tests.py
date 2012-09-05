@@ -1,9 +1,11 @@
 from django.conf import settings
+from django.test import TestCase
 
 import jingo
 from mock import patch
 from nose.tools import eq_
 
+from jingo_minify.helpers import get_media_root, get_media_url
 
 try:
     from build import BUILD_ID_CSS, BUILD_ID_JS
@@ -29,9 +31,9 @@ def test_js_helper(time):
     t = env.from_string("{{ js('common', debug=True) }}")
     s = t.render()
 
-    expected ="\n".join(['<script src="%s?build=1"></script>'
-                        % (settings.MEDIA_URL + j) for j in
-                        settings.MINIFY_BUNDLES['js']['common']])
+    expected = "\n".join(['<script src="%s?build=1"></script>'
+                         % (settings.MEDIA_URL + j) for j in
+                         settings.MINIFY_BUNDLES['js']['common']])
 
     eq_(s, expected)
 
@@ -155,3 +157,86 @@ def test_css_helper(time):
     eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
            'href="%scss/common_bundle-min.css?build=%s" />' %
            (settings.MEDIA_URL, BUILD_ID_CSS))
+
+
+KEY = '_SAVESETTING'
+
+class TestStaticVsMedia(TestCase):
+    def override_settings(self, **overrides):
+        for k, v in overrides.items():
+            # Save the original setting.
+            setattr(self, '%s%s' % (KEY, k), getattr(settings, k, None))
+            # Save the new setting.
+            setattr(settings, k, v)
+
+    def backout_overrides(self):
+        for k, v in self.__dict__.items():
+            if k.startswith(KEY):
+                key = k[len(KEY):]
+                if v is None:
+                    delattr(settings, key)
+                else:
+                    setattr(settings, key, v)
+
+    def tearDown(self):
+        self.backout_overrides()
+
+    def test_no_override(self):
+        self.override_settings(STATIC_ROOT='static',
+                               MEDIA_ROOT='media',
+                               STATIC_URL='http://example.com/static',
+                               MEDIA_URL='http://example.com/media')
+
+        eq_(get_media_root(), 'media')
+        eq_(get_media_url(), 'http://example.com/media')
+
+    def test_static_override(self):
+        self.override_settings(JINGO_MINIFY_USE_STATIC=True,
+                               STATIC_ROOT='static',
+                               MEDIA_ROOT='media',
+                               STATIC_URL='http://example.com/static',
+                               MEDIA_URL='http://example.com/media')
+
+        eq_(get_media_root(), 'static')
+        eq_(get_media_url(), 'http://example.com/static')
+
+    @patch('jingo_minify.helpers.time.time')
+    def test_css(self, time):
+        self.override_settings(JINGO_MINIFY_USE_STATIC=True,
+                               STATIC_ROOT='static',
+                               MEDIA_ROOT='media',
+                               STATIC_URL='http://example.com/static/',
+                               MEDIA_URL='http://example.com/media/')
+
+        time.return_value = 1
+        env = jingo.env
+
+        t = env.from_string("{{ css('common', debug=True) }}")
+        s = t.render()
+
+        expected ="\n".join(
+            ['<link rel="stylesheet" media="screen,projection,tv" '
+             'href="%s?build=1" />' % (settings.STATIC_URL + j)
+             for j in settings.MINIFY_BUNDLES['css']['common']])
+
+        eq_(s, expected)
+
+    @patch('jingo_minify.helpers.time.time')
+    def test_js(self, time):
+        self.override_settings(JINGO_MINIFY_USE_STATIC=True,
+                               STATIC_ROOT='static',
+                               MEDIA_ROOT='media',
+                               STATIC_URL='http://example.com/static/',
+                               MEDIA_URL='http://example.com/media/')
+
+        time.return_value = 1
+        env = jingo.env
+
+        t = env.from_string("{{ js('common', debug=True) }}")
+        s = t.render()
+
+        expected = "\n".join(
+            ['<script src="%s?build=1"></script>' % (settings.STATIC_URL + j)
+             for j in settings.MINIFY_BUNDLES['js']['common']])
+
+        eq_(s, expected)

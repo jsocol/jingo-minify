@@ -12,8 +12,10 @@ from django.core.management.base import BaseCommand, CommandError
 
 import git
 
+from jingo_minify.helpers import get_media_root, get_media_url
 
-path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
+
+path = lambda *a: os.path.join(get_media_root(), *a)
 
 
 class Command(BaseCommand):  # pragma: no cover
@@ -31,7 +33,7 @@ class Command(BaseCommand):  # pragma: no cover
     missing_files = 0
     minify_skipped = 0
     cmd_errors = False
-    ext_media_path = os.path.join(settings.MEDIA_ROOT, 'external')
+    ext_media_path = os.path.join(get_media_root(), 'external')
 
     def update_hashes(self, update=False):
         def gitid(path):

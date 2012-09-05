@@ -14,7 +14,32 @@ except ImportError:
     BUILD_ID_CSS = BUILD_ID_JS = BUILD_ID_IMG = 'dev'
     BUNDLE_HASHES = {}
 
-path = lambda *a: os.path.join(settings.MEDIA_ROOT, *a)
+
+def get_media_root():
+    """Return STATIC_ROOT or MEDIA_ROOT depending on JINGO_MINIFY_USE_STATIC.
+
+    This allows projects using Django 1.4 to continue using the old
+    ways, but projects using Django 1.4 to use the new ways.
+
+    """
+    if getattr(settings, 'JINGO_MINIFY_USE_STATIC', False):
+        return settings.STATIC_ROOT
+    return settings.MEDIA_ROOT
+
+
+def get_media_url():
+    """Return STATIC_URL or MEDIA_URL depending on JINGO_MINIFY_USE_STATIC.
+
+    Allows projects using Django 1.4 to continue using the old ways
+    but projects using Django 1.4 to use the new ways.
+
+    """
+    if getattr(settings, 'JINGO_MINIFY_USE_STATIC', False):
+        return settings.STATIC_URL
+    return settings.MEDIA_URL
+
+
+path = lambda *a: os.path.join(get_media_root(), *a)
 
 
 def _get_item_path(item):
@@ -23,7 +48,7 @@ def _get_item_path(item):
     """
     if item.startswith(('//', 'http', 'https')):
         return item
-    return settings.MEDIA_URL + item
+    return get_media_url() + item
 
 
 def _build_html(items, wrapping):
