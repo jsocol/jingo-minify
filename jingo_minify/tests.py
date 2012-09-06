@@ -1,9 +1,12 @@
 from django.conf import settings
+from django.test import TestCase
+from django.test.utils import override_settings
 
 import jingo
 from mock import patch
 from nose.tools import eq_
 
+from jingo_minify.helpers import get_media_root, get_media_url
 
 try:
     from build import BUILD_ID_CSS, BUILD_ID_JS
@@ -29,9 +32,9 @@ def test_js_helper(time):
     t = env.from_string("{{ js('common', debug=True) }}")
     s = t.render()
 
-    expected ="\n".join(['<script src="%s?build=1"></script>'
-                        % (settings.MEDIA_URL + j) for j in
-                        settings.MINIFY_BUNDLES['js']['common']])
+    expected = "\n".join(['<script src="%s?build=1"></script>'
+                         % (settings.STATIC_URL + j) for j in
+                         settings.MINIFY_BUNDLES['js']['common']])
 
     eq_(s, expected)
 
@@ -39,7 +42,7 @@ def test_js_helper(time):
     s = t.render()
 
     eq_(s, '<script src="%sjs/common-min.js?build=%s"></script>' %
-           (settings.MEDIA_URL, BUILD_ID_JS))
+           (settings.STATIC_URL, BUILD_ID_JS))
 
     t = env.from_string("{{ js('common_url', debug=True) }}")
     s = t.render()
@@ -51,7 +54,7 @@ def test_js_helper(time):
     s = t.render()
 
     eq_(s, '<script src="%sjs/common_url-min.js?build=%s"></script>' %
-           (settings.MEDIA_URL, BUILD_ID_JS))
+           (settings.STATIC_URL, BUILD_ID_JS))
 
     t = env.from_string("{{ js('common_protocol_less_url', debug=True) }}")
     s = t.render()
@@ -63,7 +66,7 @@ def test_js_helper(time):
     s = t.render()
 
     eq_(s, '<script src="%sjs/common_protocol_less_url-min.js?build=%s">'
-           '</script>' % (settings.MEDIA_URL, BUILD_ID_JS))
+           '</script>' % (settings.STATIC_URL, BUILD_ID_JS))
 
     t = env.from_string("{{ js('common_bundle', debug=True) }}")
     s = t.render()
@@ -77,7 +80,7 @@ def test_js_helper(time):
     s = t.render()
 
     eq_(s, '<script src="%sjs/common_bundle-min.js?build=%s"></script>' %
-           (settings.MEDIA_URL, BUILD_ID_JS))
+           (settings.STATIC_URL, BUILD_ID_JS))
 
 
 @patch('jingo_minify.helpers.time.time')
@@ -96,8 +99,8 @@ def test_css_helper(time):
 
     expected ="\n".join(
         ['<link rel="stylesheet" media="screen,projection,tv" '
-        'href="%s?build=1" />' % (settings.MEDIA_URL + j) for j in
-         settings.MINIFY_BUNDLES['css']['common']])
+        'href="%s?build=1" />' % (settings.STATIC_URL + j)
+         for j in settings.MINIFY_BUNDLES['css']['common']])
 
     eq_(s, expected)
 
@@ -107,7 +110,7 @@ def test_css_helper(time):
     eq_(s,
         '<link rel="stylesheet" media="screen,projection,tv" '
         'href="%scss/common-min.css?build=%s" />'
-        % (settings.MEDIA_URL, BUILD_ID_CSS))
+        % (settings.STATIC_URL, BUILD_ID_CSS))
 
     t = env.from_string("{{ css('common_url', debug=True) }}")
     s = t.render()
@@ -121,7 +124,7 @@ def test_css_helper(time):
     eq_(s,
         '<link rel="stylesheet" media="screen,projection,tv" '
         'href="%scss/common_url-min.css?build=%s" />'
-        % (settings.MEDIA_URL, BUILD_ID_CSS))
+        % (settings.STATIC_URL, BUILD_ID_CSS))
 
     t = env.from_string("{{ css('common_protocol_less_url', debug=True) }}")
     s = t.render()
@@ -135,7 +138,7 @@ def test_css_helper(time):
     eq_(s,
         '<link rel="stylesheet" media="screen,projection,tv" '
         'href="%scss/common_protocol_less_url-min.css?build=%s" />'
-        % (settings.MEDIA_URL, BUILD_ID_CSS))
+        % (settings.STATIC_URL, BUILD_ID_CSS))
 
     t = env.from_string("{{ css('common_bundle', debug=True) }}")
     s = t.render()
@@ -154,4 +157,64 @@ def test_css_helper(time):
 
     eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
            'href="%scss/common_bundle-min.css?build=%s" />' %
-           (settings.MEDIA_URL, BUILD_ID_CSS))
+           (settings.STATIC_URL, BUILD_ID_CSS))
+
+
+@override_settings(STATIC_ROOT='static',
+                   MEDIA_ROOT='media',
+                   STATIC_URL='http://example.com/static',
+                   MEDIA_URL='http://example.com/media')
+def test_no_override():
+    """No override uses STATIC versions."""
+    eq_(get_media_root(), 'static')
+    eq_(get_media_url(), 'http://example.com/static')
+
+
+@override_settings(JINGO_MINIFY_USE_STATIC=False,
+                   STATIC_ROOT='static',
+                   MEDIA_ROOT='media',
+                   STATIC_URL='http://example.com/static',
+                   MEDIA_URL='http://example.com/media')
+def test_static_override():
+    """Overriding to False uses MEDIA versions."""
+    eq_(get_media_root(), 'media')
+    eq_(get_media_url(), 'http://example.com/media')
+
+
+@override_settings(STATIC_ROOT='static',
+                   MEDIA_ROOT='media',
+                   STATIC_URL='http://example.com/static/',
+                   MEDIA_URL='http://example.com/media/')
+@patch('jingo_minify.helpers.time.time')
+def test_css(time):
+    time.return_value = 1
+    env = jingo.env
+
+    t = env.from_string("{{ css('common', debug=True) }}")
+    s = t.render()
+
+    expected ="\n".join(
+        ['<link rel="stylesheet" media="screen,projection,tv" '
+         'href="%s?build=1" />' % (settings.STATIC_URL + j)
+         for j in settings.MINIFY_BUNDLES['css']['common']])
+
+    eq_(s, expected)
+
+
+@override_settings(STATIC_ROOT='static',
+                   MEDIA_ROOT='media',
+                   STATIC_URL='http://example.com/static/',
+                   MEDIA_URL='http://example.com/media/')
+@patch('jingo_minify.helpers.time.time')
+def test_js(time):
+    time.return_value = 1
+    env = jingo.env
+
+    t = env.from_string("{{ js('common', debug=True) }}")
+    s = t.render()
+
+    expected = "\n".join(
+        ['<script src="%s?build=1"></script>' % (settings.STATIC_URL + j)
+         for j in settings.MINIFY_BUNDLES['js']['common']])
+
+    eq_(s, expected)

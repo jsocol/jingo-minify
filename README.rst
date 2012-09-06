@@ -13,6 +13,8 @@ Installing Jingo Minify
 Requirements
 ------------
 
+* **Django 1.4**
+
 * **Jingo and Jinja2**. Jingo Minify is not designed for Django templates.
 
 One of the following:
@@ -53,6 +55,13 @@ Configure the following settings::
         'css': {},
         'js': {},
     }
+
+
+Note: If you're using Django 1.4, but want to use MEDIA_ROOT and MEDIA_URL
+for static assets instead of conventional Django 1.4 STATIC_ROOT and
+STATIC_URL, you should also set::
+
+    JINGO_MINIFY_USE_STATIC = False
 
 
 Configuring
