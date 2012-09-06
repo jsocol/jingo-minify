@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 import git
 
-from jingo_minify.helpers import get_media_root, get_media_url
+from jingo_minify.helpers import get_media_root
 
 
 path = lambda *a: os.path.join(get_media_root(), *a)

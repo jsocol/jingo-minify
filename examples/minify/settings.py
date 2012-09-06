@@ -5,6 +5,11 @@ TEST_RUNNER = 'django_nose.runner.NoseTestSuiteRunner'
 ROOT = os.path.dirname(os.path.abspath(__file__))
 path = lambda *a: os.path.join(ROOT, *a)
 
+MEDIA_ROOT = '/media'
+MEDIA_URL = ''
+STATIC_ROOT = '/static'
+STATIC_URL = ''
+
 DATABASES = {
     'default': {
         'NAME': 'test.db',

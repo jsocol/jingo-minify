@@ -23,7 +23,7 @@ def get_media_root():
     ways, but projects using Django 1.4 to use the new ways.
 
     """
-    if getattr(settings, 'JINGO_MINIFY_USE_STATIC', False):
+    if getattr(settings, 'JINGO_MINIFY_USE_STATIC', True):
         return settings.STATIC_ROOT
     return settings.MEDIA_ROOT
 
@@ -35,7 +35,7 @@ def get_media_url():
     but projects using Django 1.4 to use the new ways.
 
     """
-    if getattr(settings, 'JINGO_MINIFY_USE_STATIC', False):
+    if getattr(settings, 'JINGO_MINIFY_USE_STATIC', True):
         return settings.STATIC_URL
     return settings.MEDIA_URL
 
@@ -151,7 +151,7 @@ def ensure_path_exists(path):
     except OSError as e:
         # If the directory already exists, that is fine. Otherwise re-raise.
         if e.errno != os.errno.EEXIST:
-            raise e
+            raise
 
 
 def build_less(item):
