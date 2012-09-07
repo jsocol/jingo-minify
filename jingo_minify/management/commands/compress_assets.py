@@ -36,9 +36,8 @@ class Command(BaseCommand):  # pragma: no cover
     ext_media_path = os.path.join(get_media_root(), 'external')
 
     def update_hashes(self, update=False):
-        def gitid(path):
-            id = (git.repo.Repo(os.path.join(settings.ROOT, path))
-                     .log('-1')[0].id_abbrev)
+        def media_git_id(media_path):
+            id = git.repo.Repo(path(media_path)).log('-1')[0].id_abbrev
             if update:
                 # Adds a time based hash on to the build id.
                 return '%s-%s' % (id, hex(int(time.time()))[2:])
@@ -47,14 +46,10 @@ class Command(BaseCommand):  # pragma: no cover
         build_id_file = os.path.realpath(os.path.join(settings.ROOT,
                                                       'build.py'))
         with open(build_id_file, 'w') as f:
-            f.write('BUILD_ID_CSS = "%s"' % gitid('media/css'))
-            f.write("\n")
-            f.write('BUILD_ID_JS = "%s"' % gitid('media/js'))
-            f.write("\n")
-            f.write('BUILD_ID_IMG = "%s"' % gitid('media/img'))
-            f.write("\n")
-            f.write('BUNDLE_HASHES = %s' % self.bundle_hashes)
-            f.write("\n")
+            f.write('BUILD_ID_CSS = "%s"\n' % media_git_id('css'))
+            f.write('BUILD_ID_JS = "%s"\n' % media_git_id('js'))
+            f.write('BUILD_ID_IMG = "%s"\n' % media_git_id('img'))
+            f.write('BUNDLE_HASHES = %s\n' % self.bundle_hashes)
 
     def handle(self, **options):
         if options.get('do_update_only', False):
