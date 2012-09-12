@@ -47,11 +47,11 @@ class Command(BaseCommand):  # pragma: no cover
         build_id_file = os.path.realpath(os.path.join(settings.ROOT,
                                                       'build.py'))
         with open(build_id_file, 'w') as f:
-            f.write('BUILD_ID_CSS = "%s"' % gitid('media/css'))
+            f.write('BUILD_ID_CSS = "%s"' % gitid(path('css')))
             f.write("\n")
-            f.write('BUILD_ID_JS = "%s"' % gitid('media/js'))
+            f.write('BUILD_ID_JS = "%s"' % gitid(path('js')))
             f.write("\n")
-            f.write('BUILD_ID_IMG = "%s"' % gitid('media/img'))
+            f.write('BUILD_ID_IMG = "%s"' % gitid(path('img')))
             f.write("\n")
             f.write('BUNDLE_HASHES = %s' % self.bundle_hashes)
             f.write("\n")
