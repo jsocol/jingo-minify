@@ -28,16 +28,16 @@ MINIFY_BUNDLES = {
         'common': ['css/test.css'],
         'common_url': ['http://example.com/test.css'],
         'common_protocol_less_url': ['//example.com/test.css'],
-        'common_bundle': ['css/test.css', 'http://example/test.css',
-                          '//example/test.css',
-                          'https://example/test.css']
+        'common_bundle': ['css/test.css', 'http://example.com/test.css',
+                          '//example.com/test.css',
+                          'https://example.com/test.css']
     },
     'js': {
         'common': ['js/test.js'],
         'common_url': ['http://example.com/test.js'],
         'common_protocol_less_url': ['//example.com/test.js'],
-        'common_bundle': ['js/test.js', 'http://example/test.js',
-                          '//example/test.js',
-                          'https://example/test.js'],
+        'common_bundle': ['js/test.js', 'http://example.com/test.js',
+                          '//example.com/test.js',
+                          'https://example.com/test.js'],
     },
 }
