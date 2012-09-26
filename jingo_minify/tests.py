@@ -6,7 +6,8 @@ import jingo
 from mock import patch
 from nose.tools import eq_
 
-from jingo_minify.helpers import get_media_root, get_media_url
+from jingo_minify.helpers import (css_urls, get_media_root, get_media_url,
+                                  js_urls)
 
 try:
     from build import BUILD_ID_CSS, BUILD_ID_JS
@@ -84,6 +85,21 @@ def test_js_helper(time):
 
 
 @patch('jingo_minify.helpers.time.time')
+def test_js_helper_fn(time):
+    """
+    Given the js_urls() function, check that it yields URLs with build IDs.
+    """
+    time.return_value = 1
+
+    eq_(list(js_urls('common', debug=True)),
+        ['%s?build=1' % j for j in
+         settings.MINIFY_BUNDLES['js']['common']])
+
+    eq_(list(js_urls('common_url', debug=False)),
+        ['js/common_url-min.js?build=%s' % BUILD_ID_JS])
+
+
+@patch('jingo_minify.helpers.time.time')
 def test_css_helper(time):
     """
     Given the css() tag if we return the assets that make up that bundle
@@ -158,6 +174,21 @@ def test_css_helper(time):
     eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
            'href="%scss/common_bundle-min.css?build=%s" />' %
            (settings.STATIC_URL, BUILD_ID_CSS))
+
+
+@patch('jingo_minify.helpers.time.time')
+def test_css_helper_fn(time):
+    """
+    Given the css_urls() function, check that it yields URLs with build IDs.
+    """
+    time.return_value = 1
+
+    eq_(list(css_urls('common', debug=True)),
+        ['%s?build=1' % j
+         for j in settings.MINIFY_BUNDLES['css']['common']])
+
+    eq_(list(css_urls('common_bundle', debug=False)),
+        ['css/common_bundle-min.css?build=%s' % BUILD_ID_CSS])
 
 
 @override_settings(STATIC_ROOT='static',

@@ -213,6 +213,23 @@ automatically in a few ways.
   with the rest of the CSS.
 
 
+Programmatic Usage
+==================
+
+As an alternative to the template helpers you can use two functions from
+the ``jingo_minify.helpers`` module:
+
+* ``js_urls(bundle_name)``
+
+  * Yields relative URLs for the JS files in the bundle. These are not prefixed
+    by your MEDIA_URL.
+
+* ``css_urls(bundle_name)``
+
+  * Yields relative URLs for the CSS files in the bundle. These also are not
+    prefixed by your MEDIA_URL.
+
+
 .. _Jingo: https://github.com/jbalogh/jingo
 .. _Jinja2: http://jinja.pocoo.org/docs/
 .. _Django: https://www.djangoproject.com/

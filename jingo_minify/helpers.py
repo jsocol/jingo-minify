@@ -82,24 +82,12 @@ def _build_html(items, wrapping):
 
 
 @register.function
-def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
+def js(bundle, defer=False, async=False, **kwargs):
     """
     If we are in debug mode, just output a single script tag for each js file.
     If we are not in debug mode, return a script that points at bundle-min.js.
     """
     attrs = []
-
-    if debug:
-        # Add timestamp to avoid caching.
-        items = ['%s?build=%s' % (item, int(time.time())) for item in
-                 settings.MINIFY_BUNDLES['js'][bundle]]
-    else:
-        build_id = BUILD_ID_JS
-        bundle_full = "js:%s" % bundle
-        if bundle_full in BUNDLE_HASHES:
-            build_id = BUNDLE_HASHES[bundle_full]
-        items = ('js/%s-min.js?build=%s' % (bundle, build_id,),)
-
     attrs.append('src="%s"')
 
     if defer:
@@ -109,11 +97,31 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
         attrs.append('async')
 
     string = '<script %s></script>' % ' '.join(attrs)
-    return _build_html(items, string)
+    return _build_html(js_urls(bundle, **kwargs), string)
+
+
+def js_urls(bundle, debug=settings.TEMPLATE_DEBUG):
+    """
+    If we are in debug mode, yield each relative URL for each JS file in the
+    bundle.
+    If we are not in debug mode, yield a single relative bundle-min.js URL.
+
+    All URLs are relative to your MEDIA_URL or STATIC_URL.
+    """
+    if debug:
+        # Add timestamp to avoid caching.
+        for item in settings.MINIFY_BUNDLES['js'][bundle]:
+            yield '%s?build=%s' % (item, int(time.time()))
+    else:
+        build_id = BUILD_ID_JS
+        bundle_full = "js:%s" % bundle
+        if bundle_full in BUNDLE_HASHES:
+            build_id = BUNDLE_HASHES[bundle_full]
+        yield 'js/%s-min.js?build=%s' % (bundle, build_id,)
 
 
 @register.function
-def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
+def css(bundle, media=False, **kwargs):
     """
     If we are in debug mode, just output a single script tag for each css file.
     If we are not in debug mode, return a script that points at bundle-min.css.
@@ -121,6 +129,17 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
     if not media:
         media = getattr(settings, 'CSS_MEDIA_DEFAULT', "screen,projection,tv")
 
+    return _build_html(css_urls(bundle, **kwargs),
+            '<link rel="stylesheet" media="%s" href="%%s" />' % media)
+
+
+def css_urls(bundle, debug=settings.TEMPLATE_DEBUG):
+    """
+    If we are in debug mode, yield each relative css file URL in the bundle.
+    If we are not in debug mode, yield a single relative URL to bundle-min.css.
+
+    All URLs are relative to your MEDIA_URL or STATIC_URL.
+    """
     if debug:
         items = []
         for item in settings.MINIFY_BUNDLES['css'][bundle]:
@@ -132,17 +151,15 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
                 items.append(item)
 
         # Add timestamp to avoid caching.
-        items = ['%s?build=%s' % (item, int(time.time())) for item in items]
+        for item in items:
+            yield '%s?build=%s' % (item, int(time.time()))
     else:
         build_id = BUILD_ID_CSS
         bundle_full = "css:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
 
-        items = ('css/%s-min.css?build=%s' % (bundle, build_id,),)
-
-    return _build_html(items,
-            '<link rel="stylesheet" media="%s" href="%%s" />' % media)
+        yield 'css/%s-min.css?build=%s' % (bundle, build_id,)
 
 
 def ensure_path_exists(path):
