@@ -8,7 +8,6 @@ import functools
 import os
 
 from fabric.api import local, cd, env
-from fabric.contrib.project import rsync_project
 
 NAME = os.path.basename(os.path.dirname(__file__))
 ROOT = os.path.abspath(os.path.dirname(__file__))
