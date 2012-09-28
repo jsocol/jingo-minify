@@ -19,13 +19,15 @@ def setup():
 
 
 @patch('jingo_minify.helpers.time.time')
-def test_js_helper(time):
+@patch('jingo_minify.helpers.os.path.getmtime')
+def test_js_helper(getmtime, time):
     """
     Given the js() tag if we return the assets that make up that bundle
     as defined in settings.MINIFY_BUNDLES.
 
     If we're not in debug mode, we just return a minified url
     """
+    getmtime.return_value = 1
     time.return_value = 1
     env = jingo.env
 
@@ -84,13 +86,15 @@ def test_js_helper(time):
 
 
 @patch('jingo_minify.helpers.time.time')
-def test_css_helper(time):
+@patch('jingo_minify.helpers.os.path.getmtime')
+def test_css_helper(getmtime, time):
     """
     Given the css() tag if we return the assets that make up that bundle
     as defined in settings.MINIFY_BUNDLES.
 
     If we're not in debug mode, we just return a minified url
     """
+    getmtime.return_value = 1
     time.return_value = 1
     env = jingo.env
 
@@ -186,7 +190,9 @@ def test_static_override():
                    STATIC_URL='http://example.com/static/',
                    MEDIA_URL='http://example.com/media/')
 @patch('jingo_minify.helpers.time.time')
-def test_css(time):
+@patch('jingo_minify.helpers.os.path.getmtime')
+def test_css(getmtime, time):
+    getmtime.return_value = 1
     time.return_value = 1
     env = jingo.env
 
@@ -206,7 +212,9 @@ def test_css(time):
                    STATIC_URL='http://example.com/static/',
                    MEDIA_URL='http://example.com/media/')
 @patch('jingo_minify.helpers.time.time')
-def test_js(time):
+@patch('jingo_minify.helpers.os.path.getmtime')
+def test_js(getmtime, time):
+    getmtime.return_value = 1
     time.return_value = 1
     env = jingo.env
 

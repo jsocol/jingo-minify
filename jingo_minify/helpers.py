@@ -68,9 +68,16 @@ def _get_item_path(item):
     """
     Determine whether to return a relative path or a URL.
     """
-    if item.startswith(('//', 'http', 'https')):
+    if item.startswith(('//', 'http://', 'https://')):
         return item
     return get_media_url() + item
+
+
+def _get_mtime(item):
+    """Get a last-changed timestamp for development."""
+    if item.startswith(('//', 'http://', 'https://')):
+        return int(time.time())
+    return int(os.path.getmtime(get_path(item)))
 
 
 def _build_html(items, wrapping):
@@ -91,7 +98,7 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
 
     if debug:
         # Add timestamp to avoid caching.
-        items = ['%s?build=%s' % (item, int(time.time())) for item in
+        items = ['%s?build=%s' % (item, _get_mtime(item)) for item in
                  settings.MINIFY_BUNDLES['js'][bundle]]
     else:
         build_id = BUILD_ID_JS
@@ -132,7 +139,7 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
                 items.append(item)
 
         # Add timestamp to avoid caching.
-        items = ['%s?build=%s' % (item, int(time.time())) for item in items]
+        items = ['%s?build=%s' % (item, _get_mtime(item)) for item in items]
     else:
         build_id = BUILD_ID_CSS
         bundle_full = "css:%s" % bundle
@@ -175,4 +182,3 @@ def build_ids(request):
     """A context processor for injecting the css/js build ids."""
     return {'BUILD_ID_CSS': BUILD_ID_CSS, 'BUILD_ID_JS': BUILD_ID_JS,
             'BUILD_ID_IMG': BUILD_ID_IMG}
-
