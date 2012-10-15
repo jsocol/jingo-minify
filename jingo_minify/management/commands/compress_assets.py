@@ -171,9 +171,11 @@ class Command(BaseCommand):  # pragma: no cover
                 print ' - Not a valid remote file %s' % filename
                 return None
 
-        if filename.endswith('.less'):
+        css_bin = (filename.endswith('.less') and settings.LESS_BIN or
+                   filename.endswith('.sass', '.scss') and settings.SASS_BIN)
+        if css_bin:
             fp = path(filename.lstrip('/'))
-            self._call('%s %s %s.css' % (settings.LESS_BIN, fp, fp),
+            self._call('%s %s %s.css' % (css_bin, fp, fp),
                  shell=True, stdout=PIPE)
             filename = '%s.css' % filename
         return path(filename.lstrip('/'))
