@@ -261,8 +261,16 @@ class Command(BaseCommand):  # pragma: no cover
         if url.startswith('data:') or url.startswith('http'):
             return "url(%s)" % url
 
-        url = url.split('?')[0]
-        full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
-                                url)
+        anchor = ''
+        if '#' in url:
+            url, anchor = url.rsplit('#', 1)
+            anchor = '#' + anchor
 
-        return "url(%s?%s)" % (url, self._file_hash(full_url))
+        url = url.split('?')[0]
+        if url.startswith('/'):
+            full_url = os.path.join(settings.ROOT, url[1:])
+        else:
+            full_url = os.path.join(settings.ROOT, os.path.dirname(parent),
+                                    url)
+
+        return "url(%s?%s%s)" % (url, self._file_hash(full_url), anchor)
