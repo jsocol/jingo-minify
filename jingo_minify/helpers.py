@@ -50,7 +50,7 @@ def get_path(path):
 
     """
     debug = getattr(settings, 'DEBUG', False)
-    static = getattr(settings, 'JINGO_MINIFY_USE_STATIC', False)
+    static = getattr(settings, 'JINGO_MINIFY_USE_STATIC', True)
 
     full_path = os.path.join(get_media_root(), path)
 
