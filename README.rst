@@ -57,6 +57,9 @@ Configure the following settings::
         # ...
     )
 
+    # The subdirectory of the media folder that you wish to store bundles in
+    BUNDLES_DIR = 'bundled'
+
     # This is the important part.
     MINIFY_BUNDLES = {
         'css': {},

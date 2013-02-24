@@ -1,3 +1,5 @@
+import os
+import tempfile
 from django.conf import settings
 from django.test.utils import override_settings
 
@@ -6,6 +8,7 @@ from mock import ANY, call, patch
 from nose.tools import eq_
 
 from .utils import get_media_root, get_media_url
+from .management.commands.compress_assets import Command
 
 try:
     from build import BUILD_ID_CSS, BUILD_ID_JS
@@ -66,8 +69,9 @@ def test_js_helper(getmtime, time):
     t = env.from_string("{{ js('common_protocol_less_url', debug=False) }}")
     s = t.render()
 
-    eq_(s, '<script src="%sjs/common_protocol_less_url-min.js?build=%s">'
-           '</script>' % (settings.STATIC_URL, BUILD_ID_JS))
+    eq_(s,
+        '<script src="%sjs/common_protocol_less_url-min.js?build=%s">'
+        '</script>' % (settings.STATIC_URL, BUILD_ID_JS))
 
     t = env.from_string("{{ js('common_bundle', debug=True) }}")
     s = t.render()
@@ -80,8 +84,8 @@ def test_js_helper(getmtime, time):
     t = env.from_string("{{ js('common_bundle', debug=False) }}")
     s = t.render()
 
-    eq_(s, '<script src="%sjs/common_bundle-min.js?build=%s"></script>' %
-           (settings.STATIC_URL, BUILD_ID_JS))
+    eq_(s, '<script src="%sjs/common_bundle-min.js?build=%s"></script>'
+           % (settings.STATIC_URL, BUILD_ID_JS))
 
 
 @patch('jingo_minify.helpers.time.time')
@@ -296,3 +300,34 @@ def test_js(getmtime, time):
          for j in settings.MINIFY_BUNDLES['js']['common']])
 
     eq_(s, expected)
+
+@override_settings(STATIC_ROOT='static',
+                   MEDIA_ROOT='media')
+def test_fix_urls():
+    """Make sure relative URL's are fixed correctly"""
+    command = Command()
+
+    tmp = tempfile.mkstemp()[1]
+
+    tmp_file = open(tmp, 'w')
+    tmp_file.write('url(../img/test.png);')
+    tmp_file.close()
+
+    # Test files in same directory
+    compressed = command._fix_urls(tmp,
+        os.path.join(os.path.dirname(tmp), 'compiled'))
+    compressed_file = open(compressed, 'r')
+    assert 'url(../img/test.png);' == compressed_file.read()
+    compressed_file.close()
+
+    # Test files in different directory
+    compressed = command._fix_urls(tmp,
+        os.path.join(os.path.dirname(tmp), 'dir', 'compiled'))
+    compressed_file = open(compressed, 'r')
+    assert "url(../../img/test.png);" == compressed_file.read()
+    compressed_file.close()
+
+    # Remove temporary files
+    os.remove(compressed)
+    os.remove(tmp)
+

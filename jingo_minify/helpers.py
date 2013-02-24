@@ -70,7 +70,9 @@ def get_js_urls(bundle, debug=None):
         bundle_full = 'js:%s' % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        return (_get_item_path('js/%s-min.js?build=%s' % (bundle, build_id,)),)
+        item = 'js/%s-min.js?build=%s' % (bundle, build_id,)
+        item = os.path.join(getattr(settings, 'BUNDLES_DIR', ''), item)
+        return (_get_item_path(item),)
 
 
 def _get_compiled_css_url(item):
@@ -120,8 +122,9 @@ def get_css_urls(bundle, debug=None):
         bundle_full = 'css:%s' % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        return (_get_item_path('css/%s-min.css?build=%s' %
-                               (bundle, build_id)),)
+        item = 'css/%s-min.css?build=%s' % (bundle, build_id)
+        item = os.path.join(getattr(settings, 'BUNDLES_DIR', ''), item)
+        return (_get_item_path(item),)
 
 
 @register.function
