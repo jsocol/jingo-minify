@@ -26,8 +26,8 @@ One of the following:
 Optionally:
 
 * **less**. Jingo Minify supports less_, if you have ``lessc`` available.
-
 * **sass**. Jingo Minify supports sass_, if you have ``sass`` available.
+* **stylus**. Jingo Minify supports stylus_, if you have ``stylus`` available.
 
 
 Installation
@@ -222,10 +222,26 @@ If you want to use less_ or sass_ files and have ``LESS_BIN`` or
   bundled with the rest of the CSS.
 
 
+Using Stylus
+============
+
+If you want to use stylus_ files and have ``STYLUS_BIN`` defined, stylus is
+supported automatically in a few ways.
+
+* To use a stylus file, simply include a file in a CSS bundle that ends with
+  ``.styl``.
+
+* Your stylus files, if changed, will be recompiled on every request - even
+  in development.
+
+* In production, stylus files are automatically compiled before being bundled
+  with the rest of the CSS.
+
 .. _Jingo: https://github.com/jbalogh/jingo
 .. _Jinja2: http://jinja.pocoo.org/docs/
 .. _Django: https://www.djangoproject.com/
 .. _less: http://lesscss.org/
 .. _sass: http://sass-lang.com/
+.. _stylus: http://learnboost.github.com/stylus/
 .. _UglifyJS: https://github.com/mishoo/UglifyJS
 .. _clean-css: https://github.com/GoalSmashers/clean-css

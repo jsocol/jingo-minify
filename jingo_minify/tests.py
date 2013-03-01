@@ -1,9 +1,8 @@
 from django.conf import settings
-from django.test import TestCase
 from django.test.utils import override_settings
 
 import jingo
-from mock import patch
+from mock import ANY, call, patch
 from nose.tools import eq_
 
 from jingo_minify.helpers import get_media_root, get_media_url
@@ -101,7 +100,7 @@ def test_css_helper(getmtime, time):
     t = env.from_string("{{ css('common', debug=True) }}")
     s = t.render()
 
-    expected ="\n".join(
+    expected = "\n".join(
         ['<link rel="stylesheet" media="screen,projection,tv" '
         'href="%s?build=1" />' % (settings.STATIC_URL + j)
          for j in settings.MINIFY_BUNDLES['css']['common']])
@@ -199,12 +198,36 @@ def test_css(getmtime, time):
     t = env.from_string("{{ css('common', debug=True) }}")
     s = t.render()
 
-    expected ="\n".join(
+    expected = "\n".join(
         ['<link rel="stylesheet" media="screen,projection,tv" '
          'href="%s?build=1" />' % (settings.STATIC_URL + j)
          for j in settings.MINIFY_BUNDLES['css']['common']])
 
     eq_(s, expected)
+
+
+@override_settings(STATIC_ROOT='static',
+                   MEDIA_ROOT='media',
+                   LESS_PREPROCESS=True,
+                   LESS_BIN='lessc-bin',
+                   SASS_BIN='sass-bin',
+                   STYLUS_BIN='stylus-bin')
+@patch('jingo_minify.helpers.time.time')
+@patch('jingo_minify.helpers.os.path.getmtime')
+@patch('jingo_minify.helpers.subprocess')
+@patch('__builtin__.open', spec=True)
+def test_compiled_css(open_mock, subprocess_mock, getmtime_mock, time_mock):
+    jingo.env.from_string("{{ css('compiled', debug=True) }}").render()
+
+    eq_(subprocess_mock.Popen.mock_calls,
+        [call(['lessc-bin', 'static/css/less.less'], stdout=ANY),
+         call(['sass-bin', 'static/css/sass.sass'], stdout=ANY),
+         call(['sass-bin', 'static/css/scss.scss'], stdout=ANY)])
+
+    subprocess_mock.call.assert_called_with(
+        'stylus-bin --include-css --include '
+        'static/css < static/css/stylus.styl > static/css/stylus.styl.css',
+        shell=True)
 
 
 @override_settings(STATIC_ROOT='static',

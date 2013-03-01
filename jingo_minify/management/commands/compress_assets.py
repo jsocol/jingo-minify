@@ -145,7 +145,7 @@ class Command(BaseCommand):  # pragma: no cover
                 os.makedirs(self.ext_media_path)
 
             filename = os.path.basename(url)
-            if filename.endswith(('.js', '.css', '.less')):
+            if filename.endswith(('.js', '.css', '.less', '.styl')):
                 fp = path(filename.lstrip('/'))
                 file_path = '%s/%s' % (self.ext_media_path, filename)
 
@@ -171,12 +171,18 @@ class Command(BaseCommand):  # pragma: no cover
                 print ' - Not a valid remote file %s' % filename
                 return None
 
-        css_bin = (filename.endswith('.less') and settings.LESS_BIN or
-                   filename.endswith('.sass', '.scss') and settings.SASS_BIN)
+        css_bin = ((filename.endswith('.less') and settings.LESS_BIN) or
+                   (filename.endswith(('.sass', '.scss')) and settings.SASS_BIN))
         if css_bin:
             fp = path(filename.lstrip('/'))
             self._call('%s %s %s.css' % (css_bin, fp, fp),
                  shell=True, stdout=PIPE)
+            filename = '%s.css' % filename
+        elif filename.endswith('.styl'):
+            fp = path(filename.lstrip('/'))
+            self._call('%s --include-css --include %s < %s > %s.css' %
+                       (settings.STYLUS_BIN, os.path.dirname(fp), fp, fp),
+                       shell=True, stdout=PIPE)
             filename = '%s.css' % filename
         return path(filename.lstrip('/'))
 
