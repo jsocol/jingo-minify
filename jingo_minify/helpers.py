@@ -133,7 +133,11 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
         for item in settings.MINIFY_BUNDLES['css'][bundle]:
             if (item.endswith('.less') and
                 getattr(settings, 'LESS_PREPROCESS', False)):
-                build_less(item)
+                build_css(item, settings.LESS_BIN)
+                items.append('%s.css' % item)
+            elif (item.endswith(('.scss', '.sass')) and
+                  getattr(settings, 'SASS_PREPROCESS', False)):
+                build_css(item, settings.SASS_BIN)
                 items.append('%s.css' % item)
             else:
                 items.append(item)
@@ -161,20 +165,23 @@ def ensure_path_exists(path):
             raise
 
 
-def build_less(item):
+def build_css(item, css_bin):
+    """
+    Builds LESS or Sass files. Takes path to lessc/sass binary as argument.
+    """
     path_css = get_path('%s.css' % item)
-    path_less = get_path(item)
+    path_pre_css = get_path(item)
 
-    updated_less = os.path.getmtime(get_path(item))
+    updated_pre_css = os.path.getmtime(get_path(item))
     updated_css = 0  # If the file doesn't exist, force a refresh.
     if os.path.exists(path_css):
         updated_css = os.path.getmtime(path_css)
 
     # Is the uncompiled version newer?  Then recompile!
-    if updated_less > updated_css:
+    if updated_pre_css > updated_css:
         ensure_path_exists(os.path.dirname(path_css))
         with open(path_css, 'w') as output:
-            subprocess.Popen([settings.LESS_BIN, path_less],
+            subprocess.Popen([css_bin, path_pre_css],
                              stdout=output)
 
 

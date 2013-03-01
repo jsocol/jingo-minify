@@ -27,6 +27,8 @@ Optionally:
 
 * **less**. Jingo Minify supports less_, if you have ``lessc`` available.
 
+* **sass**. Jingo Minify supports sass_, if you have ``sass`` available.
+
 
 Installation
 ------------
@@ -38,6 +40,9 @@ Configure the following settings::
 
     # If you want to use less, set this:
     LESS_BIN = '/path/to/lessc' # Probably just 'lessc'
+
+    # If you want to use sass, set this:
+    SASS_BIN = '/path/to/sass'
 
     # If you want to use node-based minifiers, set these:
     UGLIFY_BIN = '/path/to/uglifyjs' # Probably just 'uglify'
@@ -193,29 +198,34 @@ command with `--verbosity=2` (or `-v2`).
     This isn't 100% collision proof, but it should be more than good enough.
 
 
-Using LESS
-==========
+Using LESS or SASS
+==================
 
-If you want to use less_ files and have ``LESS_BIN`` defined, less is supported
-automatically in a few ways.
+If you want to use less_ or sass_ files and have ``LESS_BIN`` or
+``SASS_BIN`` defined, less and sass are supported automatically in a few ways.
 
 * To use a less file, simply include a file in a CSS bundle that ends with
   ``.less``.
+
+* To use a sass file, simply include a file in a CSS bundle that ends with
+  ``.sass`` or ``.scss`` depending on your preferred syntax.
+
 
 * For development, if you want to use the less JavaScript runtime compiler,
   you'll have to figure out how to include it in your project.
 
 * If you want to compile less on the server, even in development, add a
-  setting: ``LESS_PREPROCESS = True``. Your less files will be recompiled on
-  every request.
+  setting: ``LESS_PREPROCESS = True`` or ``SASS_PREPROCESS = True``.
+  Your less and sass files will be recompiled on every request.
 
-* In production, less files are automatically compiled before being bundled
-  with the rest of the CSS.
+* In production, less and sass files are automatically compiled before being
+  bundled with the rest of the CSS.
 
 
 .. _Jingo: https://github.com/jbalogh/jingo
 .. _Jinja2: http://jinja.pocoo.org/docs/
 .. _Django: https://www.djangoproject.com/
 .. _less: http://lesscss.org/
+.. _sass: http://sass-lang.com/
 .. _UglifyJS: https://github.com/mishoo/UglifyJS
 .. _clean-css: https://github.com/GoalSmashers/clean-css

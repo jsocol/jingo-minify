@@ -41,3 +41,9 @@ MINIFY_BUNDLES = {
                           'https://example.com/test.js'],
     },
 }
+
+LESS_PREPROCESS = True
+LESS_BIN = '/usr/bin/lessc'
+
+SASS_PREPROCESS = True
+SASS_BIN = '/usr/bin/sass'
