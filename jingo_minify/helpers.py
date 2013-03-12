@@ -131,17 +131,13 @@ def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
     if debug:
         items = []
         for item in settings.MINIFY_BUNDLES['css'][bundle]:
-            if (item.endswith('.less') and
-                getattr(settings, 'LESS_PREPROCESS', False)):
-                build_css(item, settings.LESS_BIN)
-                items.append('%s.css' % item)
-            elif (item.endswith(('.scss', '.sass')) and
-                  getattr(settings, 'SASS_PREPROCESS', False)):
-                build_css(item, settings.SASS_BIN)
+            if ((item.endswith('.less') and
+                 getattr(settings, 'LESS_PREPROCESS', False)) or
+                item.endswith(('.sass', '.scss', '.styl'))):
+                compile_css(item)
                 items.append('%s.css' % item)
             else:
                 items.append(item)
-
         # Add timestamp to avoid caching.
         items = ['%s?build=%s' % (item, _get_mtime(item)) for item in items]
     else:
@@ -165,24 +161,29 @@ def ensure_path_exists(path):
             raise
 
 
-def build_css(item, css_bin):
-    """
-    Builds LESS or Sass files. Takes path to lessc/sass binary as argument.
-    """
-    path_css = get_path('%s.css' % item)
-    path_pre_css = get_path(item)
 
-    updated_pre_css = os.path.getmtime(get_path(item))
+def compile_css(item):
+    path_src = get_path(item)
+    path_dst = get_path('%s.css' % item)
+
+    updated_src = os.path.getmtime(get_path(item))
     updated_css = 0  # If the file doesn't exist, force a refresh.
-    if os.path.exists(path_css):
-        updated_css = os.path.getmtime(path_css)
+    if os.path.exists(path_dst):
+        updated_css = os.path.getmtime(path_dst)
 
     # Is the uncompiled version newer?  Then recompile!
-    if updated_pre_css > updated_css:
-        ensure_path_exists(os.path.dirname(path_css))
-        with open(path_css, 'w') as output:
-            subprocess.Popen([css_bin, path_pre_css],
-                             stdout=output)
+    if not updated_css or updated_src > updated_css:
+        ensure_path_exists(os.path.dirname(path_dst))
+        if item.endswith('.less'):
+            with open(path_dst, 'w') as output:
+                subprocess.Popen([settings.LESS_BIN, path_src], stdout=output)
+        elif item.endswith(('.sass', '.scss')):
+            with open(path_dst, 'w') as output:
+                subprocess.Popen([settings.SASS_BIN, path_src], stdout=output)
+        elif item.endswith('.styl'):
+            subprocess.call('%s --include-css --include %s < %s > %s' %
+                            (settings.STYLUS_BIN, os.path.dirname(path_src),
+                             path_src, path_dst), shell=True)
 
 
 def build_ids(request):
