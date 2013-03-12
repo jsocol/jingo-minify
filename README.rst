@@ -198,44 +198,40 @@ command with `--verbosity=2` (or `-v2`).
     This isn't 100% collision proof, but it should be more than good enough.
 
 
-Using LESS or SASS
-==================
+Using LESS
+==========
 
-If you want to use less_ or sass_ files and have ``LESS_BIN`` or
-``SASS_BIN`` defined, less and sass are supported automatically in a few ways.
-
-* To use a less file, simply include a file in a CSS bundle that ends with
-  ``.less``.
-
-* To use a sass file, simply include a file in a CSS bundle that ends with
-  ``.sass`` or ``.scss`` depending on your preferred syntax.
-
-
-* For development, if you want to use the less JavaScript runtime compiler,
-  you'll have to figure out how to include it in your project.
-
-* If you want to compile less on the server, even in development, add a
-  setting: ``LESS_PREPROCESS = True`` or ``SASS_PREPROCESS = True``.
-  Your less and sass files will be recompiled on every request.
-
-* In production, less and sass files are automatically compiled before being
-  bundled with the rest of the CSS.
-
-
-Using Stylus
-============
-
-If you want to use stylus_ files and have ``STYLUS_BIN`` defined, stylus is
+If you want to use less_ files and have ``LESS_BIN`` defined, LESS is
 supported automatically in a few ways.
 
-* To use a stylus file, simply include a file in a CSS bundle that ends with
-  ``.styl``.
+* To use a LESS file, simply include a file in a CSS bundle that ends with
+  ``.less``.
 
-* Your stylus files, if changed, will be recompiled on every request - even
-  in development.
+* For development, if you want to use the LESS JavaScript runtime compiler,
+  you'll have to figure out how to include it in your project.
 
-* In production, stylus files are automatically compiled before being bundled
+* If you want to compile LESS on the server, even in development, add a
+  setting: ``LESS_PREPROCESS = True``. Your LESS files will be recompiled on
+  every request.
+
+* In production, LESS files are automatically compiled before being bundled
   with the rest of the CSS.
+
+
+Using SASS or Stylus
+====================
+
+If you want to use sass_ or stylus_ files, you must define ```SASS_BIN`` or
+``STYLUS_BIN``, respectively.
+
+* To use a SASS or Stylus file, simply include a file in a CSS bundle that
+  ends with ``.sass`` or ``.scss`` (SASS) or ``.styl`` (Stylus).
+
+* Your SASS/Stylus files, if changed, will be recompiled on every request -
+  even in development.
+
+* In production, Sass/Stylus files are automatically compiled before being
+  bundled with the rest of the CSS.
 
 .. _Jingo: https://github.com/jbalogh/jingo
 .. _Jinja2: http://jinja.pocoo.org/docs/
