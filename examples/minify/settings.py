@@ -30,7 +30,12 @@ MINIFY_BUNDLES = {
         'common_protocol_less_url': ['//example.com/test.css'],
         'common_bundle': ['css/test.css', 'http://example.com/test.css',
                           '//example.com/test.css',
-                          'https://example.com/test.css']
+                          'https://example.com/test.css'],
+        'compiled': ['css/plain.css',
+                     'css/less.less',
+                     'css/sass.sass',
+                     'css/scss.scss',
+                     'css/stylus.styl']
     },
     'js': {
         'common': ['js/test.js'],
