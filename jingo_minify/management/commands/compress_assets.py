@@ -232,7 +232,7 @@ class Command(BaseCommand):  # pragma: no cover
         """Run the proper minifier on the file."""
         if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
             o = {'method': 'UglifyJS', 'bin': settings.UGLIFY_BIN}
-            self._call("%s %s -o %s %s" % (o['bin'], self.v, file_out, file_in),
+            self._call("%s %s -o %s %s -m" % (o['bin'], self.v, file_out, file_in),
                  shell=True, stdout=PIPE)
         elif ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
             o = {'method': 'clean-css', 'bin': settings.CLEANCSS_BIN}
