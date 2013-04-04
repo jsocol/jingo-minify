@@ -7,7 +7,7 @@ automatically.
 import functools
 import os
 
-from fabric.api import local, cd, env
+from fabric.api import local, env
 
 NAME = os.path.basename(os.path.dirname(__file__))
 ROOT = os.path.abspath(os.path.dirname(__file__))
