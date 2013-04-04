@@ -233,6 +233,15 @@ If you want to use sass_ or stylus_ files, you must define ```SASS_BIN`` or
 * In production, Sass/Stylus files are automatically compiled before being
   bundled with the rest of the CSS.
 
+
+Running tests
+=============
+
+To run the tests::
+
+    $ python run_tests.py
+
+
 .. _Jingo: https://github.com/jbalogh/jingo
 .. _Jinja2: http://jinja.pocoo.org/docs/
 .. _Django: https://www.djangoproject.com/
