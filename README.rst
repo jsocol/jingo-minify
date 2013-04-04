@@ -213,9 +213,20 @@ automatically in a few ways.
   with the rest of the CSS.
 
 
+Running tests
+=============
+
+To run the tests::
+
+    $ python run_tests.py
+
+
 .. _Jingo: https://github.com/jbalogh/jingo
 .. _Jinja2: http://jinja.pocoo.org/docs/
 .. _Django: https://www.djangoproject.com/
 .. _less: http://lesscss.org/
 .. _UglifyJS: https://github.com/mishoo/UglifyJS
 .. _clean-css: https://github.com/GoalSmashers/clean-css
+
+
+
