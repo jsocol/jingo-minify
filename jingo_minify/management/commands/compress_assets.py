@@ -23,6 +23,8 @@ class Command(BaseCommand):  # pragma: no cover
     option_list = BaseCommand.option_list + (
         make_option('-u', '--update-only', action='store_true',
                     dest='do_update_only', help='Updates the hash only'),
+        make_option('-t', '--add-timestamp', action='store_true',
+                    dest='add_timestamp', help='Add timestamp to hash'),
     )
     requires_model_validation = False
     do_update_only = False
@@ -110,7 +112,7 @@ class Command(BaseCommand):  # pragma: no cover
                     self.minify_skipped += 1
 
         # Write out the hashes
-        self.update_hashes()
+        self.update_hashes(options.get('add_timestamp', False))
 
         if not self.v and self.minify_skipped:
             print "Unchanged files skipped for minification: %s" % (
