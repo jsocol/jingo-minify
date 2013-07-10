@@ -3,8 +3,9 @@ from django.test.utils import override_settings
 
 import jingo
 from mock import ANY, call, patch
-from nose.tools import eq_
+from nose.tools import eq_, ok_
 
+from jingo_minify import check_css
 from jingo_minify.helpers import get_media_root, get_media_url
 
 try:
@@ -249,3 +250,16 @@ def test_js(getmtime, time):
          for j in settings.MINIFY_BUNDLES['js']['common']])
 
     eq_(s, expected)
+
+
+@override_settings(LESS_PREPROCESS=False,
+                   SASS_BIN=False,
+                   STYLUS_BIN=False)
+def test_check_css():
+    messages = sorted(check_css())
+    eq_(3, len(messages))
+
+    ok_(messages[0].startswith("LESS_BIN"))
+    ok_(messages[1].startswith("SASS_BIN"))
+    ok_(messages[2].startswith("STYLUS_BIN"))
+
