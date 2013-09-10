@@ -5,7 +5,7 @@ import jingo
 from mock import ANY, call, patch
 from nose.tools import eq_
 
-from jingo_minify.helpers import get_media_root, get_media_url
+from .utils import get_media_root, get_media_url
 
 try:
     from build import BUILD_ID_CSS, BUILD_ID_JS
