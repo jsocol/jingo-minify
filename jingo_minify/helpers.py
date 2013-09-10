@@ -89,12 +89,15 @@ def _build_html(items, wrapping):
 
 
 @register.function
-def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
+def js(bundle, debug=None, defer=False, async=False):
     """
     If we are in debug mode, just output a single script tag for each js file.
     If we are not in debug mode, return a script that points at bundle-min.js.
     """
     attrs = []
+
+    if debug is None:
+        debug = settings.TEMPLATE_DEBUG
 
     if debug:
         # Add timestamp to avoid caching.
@@ -120,11 +123,14 @@ def js(bundle, debug=settings.TEMPLATE_DEBUG, defer=False, async=False):
 
 
 @register.function
-def css(bundle, media=False, debug=settings.TEMPLATE_DEBUG):
+def css(bundle, media=False, debug=None):
     """
     If we are in debug mode, just output a single script tag for each css file.
     If we are not in debug mode, return a script that points at bundle-min.css.
     """
+    if debug is None:
+        debug = settings.TEMPLATE_DEBUG
+
     if not media:
         media = getattr(settings, 'CSS_MEDIA_DEFAULT', "screen,projection,tv")
 
