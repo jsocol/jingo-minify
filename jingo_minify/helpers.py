@@ -41,51 +41,43 @@ def _build_html(items, wrapping):
                                    for item in items)))
 
 
-@register.function
-def js(bundle, debug=None, defer=False, async=False):
+def get_js_urls(bundle, debug=None):
     """
-    If we are in debug mode, just output a single script tag for each js file.
-    If we are not in debug mode, return a script that points at bundle-min.js.
-    """
-    attrs = []
+    Fetch URLs for the JS files in the requested bundle.
 
+    :param bundle:
+        Name of the bundle to fetch.
+
+    :param debug:
+        If True, return URLs for individual files instead of the minified bundle.
+    """
     if debug is None:
         debug = settings.TEMPLATE_DEBUG
 
     if debug:
         # Add timestamp to avoid caching.
-        items = ['%s?build=%s' % (item, _get_mtime(item)) for item in
-                 settings.MINIFY_BUNDLES['js'][bundle]]
+        return ['%s?build=%s' % (item, _get_mtime(item)) for item in
+                settings.MINIFY_BUNDLES['js'][bundle]]
     else:
         build_id = BUILD_ID_JS
         bundle_full = "js:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        items = ('js/%s-min.js?build=%s' % (bundle, build_id,),)
-
-    attrs.append('src="%s"')
-
-    if defer:
-        attrs.append('defer')
-
-    if async:
-        attrs.append('async')
-
-    string = '<script %s></script>' % ' '.join(attrs)
-    return _build_html(items, string)
+        return ('js/%s-min.js?build=%s' % (bundle, build_id,),)
 
 
-@register.function
-def css(bundle, media=False, debug=None):
+def get_css_urls(bundle, debug=None):
     """
-    If we are in debug mode, just output a single script tag for each css file.
-    If we are not in debug mode, return a script that points at bundle-min.css.
+    Fetch URLs for the CSS files in the requested bundle.
+
+    :param bundle:
+        Name of the bundle to fetch.
+
+    :param debug:
+        If True, return URLs for individual files instead of the minified bundle.
     """
     if debug is None:
         debug = settings.TEMPLATE_DEBUG
-
-    if not media:
-        media = getattr(settings, 'CSS_MEDIA_DEFAULT', "screen,projection,tv")
 
     if debug:
         items = []
@@ -98,16 +90,46 @@ def css(bundle, media=False, debug=None):
             else:
                 items.append(item)
         # Add timestamp to avoid caching.
-        items = ['%s?build=%s' % (item, _get_mtime(item)) for item in items]
+        return ['%s?build=%s' % (item, _get_mtime(item)) for item in items]
     else:
         build_id = BUILD_ID_CSS
         bundle_full = "css:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
+        return ('css/%s-min.css?build=%s' % (bundle, build_id,),)
 
-        items = ('css/%s-min.css?build=%s' % (bundle, build_id,),)
 
-    return _build_html(items,
+@register.function
+def js(bundle, debug=None, defer=False, async=False):
+    """
+    If we are in debug mode, just output a single script tag for each js file.
+    If we are not in debug mode, return a script that points at bundle-min.js.
+    """
+    attrs = []
+    urls = get_js_urls(bundle, debug)
+
+    attrs.append('src="%s"')
+
+    if defer:
+        attrs.append('defer')
+
+    if async:
+        attrs.append('async')
+
+    return _build_html(urls, '<script %s></script>' % ' '.join(attrs))
+
+
+@register.function
+def css(bundle, media=False, debug=None):
+    """
+    If we are in debug mode, just output a single script tag for each css file.
+    If we are not in debug mode, return a script that points at bundle-min.css.
+    """
+    urls = get_css_urls(bundle, debug)
+    if not media:
+        media = getattr(settings, 'CSS_MEDIA_DEFAULT', "screen,projection,tv")
+
+    return _build_html(urls,
             '<link rel="stylesheet" media="%s" href="%%s" />' % media)
 
 
