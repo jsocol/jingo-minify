@@ -2,4 +2,4 @@ include LICENSE
 include CONTRIBUTORS
 include README.rst
 include CHANGES.rst
-include jingo_minify/bin/yuicompressor-2.4.2.jar
+include jingo_minify/bin/yuicompressor-2.4.7.jar
