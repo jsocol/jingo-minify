@@ -7,7 +7,7 @@ from django.conf import settings
 import jinja2
 from jingo import register
 
-from .utils import get_media_root, get_media_url, get_path
+from .utils import get_media_url, get_path
 
 
 try:
@@ -37,8 +37,7 @@ def _build_html(items, wrapping):
     """
     Wrap `items` in wrapping.
     """
-    return jinja2.Markup('\n'.join((wrapping % (_get_item_path(item))
-                                   for item in items)))
+    return jinja2.Markup('\n'.join((wrapping % item for item in items)))
 
 
 def get_js_urls(bundle, debug=None):
@@ -49,21 +48,22 @@ def get_js_urls(bundle, debug=None):
         Name of the bundle to fetch.
 
     :param debug:
-        If True, return URLs for individual files instead of the minified bundle.
+        If True, return URLs for individual files instead of the minified
+        bundle.
     """
     if debug is None:
         debug = settings.TEMPLATE_DEBUG
 
     if debug:
         # Add timestamp to avoid caching.
-        return ['%s?build=%s' % (item, _get_mtime(item)) for item in
-                settings.MINIFY_BUNDLES['js'][bundle]]
+        return [_get_item_path('%s?build=%s' % (item, _get_mtime(item))) for
+                item in settings.MINIFY_BUNDLES['js'][bundle]]
     else:
         build_id = BUILD_ID_JS
         bundle_full = "js:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        return ('js/%s-min.js?build=%s' % (bundle, build_id,),)
+        return (_get_item_path('js/%s-min.js?build=%s' % (bundle, build_id,)),)
 
 
 def get_css_urls(bundle, debug=None):
@@ -74,7 +74,8 @@ def get_css_urls(bundle, debug=None):
         Name of the bundle to fetch.
 
     :param debug:
-        If True, return URLs for individual files instead of the minified bundle.
+        If True, return URLs for individual files instead of the minified
+        bundle.
     """
     if debug is None:
         debug = settings.TEMPLATE_DEBUG
@@ -90,13 +91,15 @@ def get_css_urls(bundle, debug=None):
             else:
                 items.append(item)
         # Add timestamp to avoid caching.
-        return ['%s?build=%s' % (item, _get_mtime(item)) for item in items]
+        return [_get_item_path('%s?build=%s' % (item, _get_mtime(item))) for
+                item in items]
     else:
         build_id = BUILD_ID_CSS
         bundle_full = "css:%s" % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        return ('css/%s-min.css?build=%s' % (bundle, build_id,),)
+        return (_get_item_path('css/%s-min.css?build=%s' %
+                (bundle, build_id,)),)
 
 
 @register.function
