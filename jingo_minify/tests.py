@@ -163,6 +163,53 @@ def test_css_helper(getmtime, time):
            (settings.STATIC_URL, BUILD_ID_CSS))
 
 
+def test_inline_css_helper():
+    env = jingo.env
+    t = env.from_string("{{ inline_css('common', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<style type="text/css" media="screen,projection,tv">'
+           'body {\n    color: #999;\n}\n</style>')
+
+    t = env.from_string("{{ inline_css('common', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<style type="text/css" media="screen,projection,tv">body'
+           '{color:#999}</style>')
+
+
+def test_inline_css_helper_multiple_files():
+    env = jingo.env
+    t = env.from_string("{{ inline_css('common_multi', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<style type="text/css" media="screen,projection,tv">body {\n    '
+           'color: #999;\n}\n</style>\n<style type="text/css" media="screen,'
+           'projection,tv">body {\n    color: #999;\n}\n</style>')
+
+    t = env.from_string("{{ inline_css('common_multi', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<style type="text/css" media="screen,projection,tv">body{color:'
+           '#999}\nmain{font-size:1em}\n</style>')
+
+
+def test_inline_css_helper_external_url():
+    env = jingo.env
+
+    t = env.from_string("{{ inline_css('common_url', debug=True) }}")
+    s = t.render()
+
+    eq_(s, '<link rel="stylesheet" media="screen,projection,tv" '
+           'href="http://example.com/test.css" />')
+
+    t = env.from_string("{{ inline_css('common_url', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<style type="text/css" media="screen,projection,tv">'
+        'body{color:#999}</style>')
+
+
 @override_settings(STATIC_ROOT='static',
                    MEDIA_ROOT='media',
                    STATIC_URL='http://example.com/static',
