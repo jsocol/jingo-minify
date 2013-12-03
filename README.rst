@@ -5,6 +5,8 @@ Jingo Minify
 Jingo Minify is an CSS/JS bundler and minifier for use with Jingo_, a connector
 to use Jinja2_ templates with Django_.
 
+.. image:: https://api.travis-ci.org/jsocol/jingo-minify.png
+
 
 Installing Jingo Minify
 =======================
