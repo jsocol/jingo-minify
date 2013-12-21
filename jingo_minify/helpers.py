@@ -17,11 +17,18 @@ except ImportError:
     BUNDLE_HASHES = {}
 
 
+def is_external(url):
+    """
+    Determine if it is an external URL.
+    """
+    return url.startswith(('//', 'http://', 'https://'))
+
+
 def _get_item_path(item):
     """
     Determine whether to return a relative path or a URL.
     """
-    if item.startswith(('//', 'http://', 'https://')):
+    if is_external(item):
         return item
     return get_media_url() + item
 
@@ -60,10 +67,25 @@ def get_js_urls(bundle, debug=None):
                 item in settings.MINIFY_BUNDLES['js'][bundle]]
     else:
         build_id = BUILD_ID_JS
-        bundle_full = "js:%s" % bundle
+        bundle_full = 'js:%s' % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
         return (_get_item_path('js/%s-min.js?build=%s' % (bundle, build_id,)),)
+
+
+def _get_compiled_css_url(item):
+    """
+    Compresses a preprocess file and returns its relative compressed URL.
+
+    :param item:
+        Name of the less/sass/stylus file to compress into css.
+    """
+    if ((item.endswith('.less') and
+            getattr(settings, 'LESS_PREPROCESS', False)) or
+            item.endswith(('.sass', '.scss', '.styl'))):
+        compile_css(item)
+        return item + '.css'
+    return item
 
 
 def get_css_urls(bundle, debug=None):
@@ -84,8 +106,8 @@ def get_css_urls(bundle, debug=None):
         items = []
         for item in settings.MINIFY_BUNDLES['css'][bundle]:
             if ((item.endswith('.less') and
-                 getattr(settings, 'LESS_PREPROCESS', False)) or
-                item.endswith(('.sass', '.scss', '.styl'))):
+                    getattr(settings, 'LESS_PREPROCESS', False)) or
+                    item.endswith(('.sass', '.scss', '.styl'))):
                 compile_css(item)
                 items.append('%s.css' % item)
             else:
@@ -95,11 +117,11 @@ def get_css_urls(bundle, debug=None):
                 item in items]
     else:
         build_id = BUILD_ID_CSS
-        bundle_full = "css:%s" % bundle
+        bundle_full = 'css:%s' % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
         return (_get_item_path('css/%s-min.css?build=%s' %
-                (bundle, build_id,)),)
+                               (bundle, build_id)),)
 
 
 @register.function
@@ -130,10 +152,41 @@ def css(bundle, media=False, debug=None):
     """
     urls = get_css_urls(bundle, debug)
     if not media:
-        media = getattr(settings, 'CSS_MEDIA_DEFAULT', "screen,projection,tv")
+        media = getattr(settings, 'CSS_MEDIA_DEFAULT', 'screen,projection,tv')
 
-    return _build_html(urls,
-            '<link rel="stylesheet" media="%s" href="%%s" />' % media)
+    return _build_html(urls, '<link rel="stylesheet" media="%s" href="%%s" />'
+                             % media)
+
+
+@register.function
+def inline_css(bundle, media=False, debug=None):
+    """
+    If we are in debug mode, just output a single style tag for each css file.
+    If we are not in debug mode, return a style that contains bundle-min.css.
+    Forces a regular css() call for external URLs (no inline allowed).
+    """
+    if debug is None:
+        debug = getattr(settings, 'TEMPLATE_DEBUG', False)
+
+    if debug:
+        items = [_get_compiled_css_url(i)
+                 for i in settings.MINIFY_BUNDLES['css'][bundle]]
+    else:
+        items = ['css/%s-min.css' % bundle]
+
+    if not media:
+        media = getattr(settings, 'CSS_MEDIA_DEFAULT', 'screen,projection,tv')
+
+    contents = []
+    for css in items:
+        if is_external(css):
+            return _build_html([css], '<link rel="stylesheet" media="%s" '
+                                      'href="%%s" />' % media)
+        with open(get_path(css), 'r') as f:
+            contents.append(f.read())
+
+    return _build_html(contents, '<style type="text/css" media="%s">%%s'
+                                 '</style>' % media)
 
 
 def ensure_path_exists(path):
@@ -143,7 +196,6 @@ def ensure_path_exists(path):
         # If the directory already exists, that is fine. Otherwise re-raise.
         if e.errno != os.errno.EEXIST:
             raise
-
 
 
 def compile_css(item):

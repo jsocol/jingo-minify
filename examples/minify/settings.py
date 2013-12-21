@@ -7,7 +7,7 @@ path = lambda *a: os.path.join(ROOT, *a)
 
 MEDIA_ROOT = '/media'
 MEDIA_URL = ''
-STATIC_ROOT = '/static'
+STATIC_ROOT = path('static')
 STATIC_URL = ''
 
 DATABASES = {
@@ -26,6 +26,7 @@ INSTALLED_APPS = (
 MINIFY_BUNDLES = {
     'css': {
         'common': ['css/test.css'],
+        'common_multi': ['css/test.css', 'css/test2.css'],
         'common_url': ['http://example.com/test.css'],
         'common_protocol_less_url': ['//example.com/test.css'],
         'common_bundle': ['css/test.css', 'http://example.com/test.css',
