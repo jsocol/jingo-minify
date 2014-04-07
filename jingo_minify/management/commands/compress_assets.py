@@ -103,7 +103,7 @@ class Command(BaseCommand):  # pragma: no cover
                 # Compresses the concatenations.
                 is_changed = self._is_changed(concatted_file)
                 self._clean_tmp(concatted_file)
-                if is_changed:
+                if is_changed or not os.path.isfile(compressed_file):
                     self._minify(ftype, concatted_file, compressed_file)
                 elif self.v:
                     print "File unchanged, skipping minification of %s" % (
