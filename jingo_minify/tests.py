@@ -167,6 +167,33 @@ def test_css_helper(getmtime, time):
            (settings.STATIC_URL, BUILD_ID_CSS))
 
 
+@patch('jingo_minify.helpers.time.time')
+@patch('jingo_minify.helpers.os.path.getmtime')
+@override_settings(STATIC_ROOT='static',
+                   MEDIA_ROOT='media',
+                   STATIC_URL='http://example.com/static/',
+                   MEDIA_URL='http://example.com/media/',
+                   BUNDLES_DIR='bundled')
+def test_bundles_dir(getmtime, time):
+    getmtime.return_value = 1
+    time.return_value = 1
+    env = jingo.env
+
+    t = env.from_string("{{ js('common', debug=False) }}")
+    s = t.render()
+
+    eq_(s, '<script src="%sbundled/js/common-min.js?build=%s"></script>' %
+           (settings.STATIC_URL, BUILD_ID_JS))
+
+    t = env.from_string("{{ css('common', debug=False) }}")
+    s = t.render()
+
+    eq_(s,
+        '<link rel="stylesheet" media="screen,projection,tv" '
+        'href="%sbundled/css/common-min.css?build=%s" />'
+        % (settings.STATIC_URL, BUILD_ID_CSS))
+
+
 def test_inline_css_helper():
     env = jingo.env
     t = env.from_string("{{ inline_css('common', debug=True) }}")
@@ -301,8 +328,11 @@ def test_js(getmtime, time):
 
     eq_(s, expected)
 
+
 @override_settings(STATIC_ROOT='static',
-                   MEDIA_ROOT='media')
+                   MEDIA_ROOT='media',
+                   STATIC_URL='http://example.com/static/',
+                   MEDIA_URL='http://example.com/media/')
 def test_fix_urls():
     """Make sure relative URL's are fixed correctly"""
     command = Command()
@@ -317,14 +347,55 @@ def test_fix_urls():
     compressed = command._fix_urls(tmp,
         os.path.join(os.path.dirname(tmp), 'compiled'))
     compressed_file = open(compressed, 'r')
-    assert 'url(../img/test.png);' == compressed_file.read()
+    eq_(compressed_file.read(), 'url(../img/test.png);')
     compressed_file.close()
 
     # Test files in different directory
     compressed = command._fix_urls(tmp,
         os.path.join(os.path.dirname(tmp), 'dir', 'compiled'))
     compressed_file = open(compressed, 'r')
-    assert "url(../../img/test.png);" == compressed_file.read()
+    eq_(compressed_file.read(), 'url(../../img/test.png);')
+    compressed_file.close()
+
+    # Remove temporary files
+    os.remove(compressed)
+    os.remove(tmp)
+
+    # Test data urls are unchanged
+    data_url = ('url(data:image/gif;base64,R0lGODlhEAAQAMQAAORHHOVSKudfOulr'
+                'SOp3WOyDZu6QdvCchPGolfO0o/XBs/fNwfjZ0frl3/zy7////wAAAAAAAA'
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5'
+                'BAkAABAALAAAAAAQABAAAAVVICSOZGlCQAosJ6mu7fiyZeKqNKToQGDsM8'
+                'hBADgUXoGAiqhSvp5QAnQKGIgUhwFUYLCVDFCrKUE1lBavAViFIDlTImbK'
+                'C5Gm2hB0SlBCBMQiB0UjIQA7);')
+
+    tmp = tempfile.mkstemp()[1]
+    tmp_file = open(tmp, 'w')
+    tmp_file.write(data_url)
+    tmp_file.close()
+
+    compressed = command._fix_urls(tmp,
+        os.path.join(os.path.dirname(tmp), 'compiled'))
+    compressed_file = open(compressed, 'r')
+    eq_(compressed_file.read(), data_url)
+    compressed_file.close()
+
+    # Remove temporary files
+    os.remove(compressed)
+    os.remove(tmp)
+
+    # Test absolute paths are unchanged
+    content = ('url(http://example.com/image.gif); '
+               'url(https://example.com/image.png);')
+    tmp = tempfile.mkstemp()[1]
+    tmp_file = open(tmp, 'w')
+    tmp_file.write(content)
+    tmp_file.close()
+
+    compressed = command._fix_urls(tmp,
+        os.path.join(os.path.dirname(tmp), 'compiled'))
+    compressed_file = open(compressed, 'r')
+    eq_(compressed_file.read(), content)
     compressed_file.close()
 
     # Remove temporary files
