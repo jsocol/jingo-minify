@@ -70,9 +70,10 @@ def get_js_urls(bundle, debug=None):
         bundle_full = 'js:%s' % bundle
         if bundle_full in BUNDLE_HASHES:
             build_id = BUNDLE_HASHES[bundle_full]
-        item = 'js/%s-min.js?build=%s' % (bundle, build_id,)
-        item = os.path.join(getattr(settings, 'BUNDLES_DIR', ''), item)
-        return (_get_item_path(item),)
+        return (_get_item_path(
+            os.path.join(
+                getattr(settings, 'BUNDLES_DIR', ''),
+                'js/%s-min.js?build=%s' % (bundle, build_id,))),)
 
 
 def _get_compiled_css_url(item):

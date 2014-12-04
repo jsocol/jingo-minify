@@ -1,9 +1,11 @@
 import os
 import tempfile
+
 from django.conf import settings
 from django.test.utils import override_settings
 
 import jingo
+
 from mock import ANY, call, patch
 from nose.tools import eq_
 
@@ -84,8 +86,8 @@ def test_js_helper(getmtime, time):
     t = env.from_string("{{ js('common_bundle', debug=False) }}")
     s = t.render()
 
-    eq_(s, '<script src="%sjs/common_bundle-min.js?build=%s"></script>'
-           % (settings.STATIC_URL, BUILD_ID_JS))
+    eq_(s, '<script src="%sjs/common_bundle-min.js?build=%s"></script>' %
+        (settings.STATIC_URL, BUILD_ID_JS))
 
 
 @patch('jingo_minify.helpers.time.time')
@@ -334,7 +336,7 @@ def test_js(getmtime, time):
                    STATIC_URL='http://example.com/static/',
                    MEDIA_URL='http://example.com/media/')
 def test_fix_urls():
-    """Make sure relative URL's are fixed correctly"""
+    """Make sure relative URLs are fixed correctly."""
     command = Command()
 
     tmp = tempfile.mkstemp()[1]
@@ -362,12 +364,7 @@ def test_fix_urls():
     os.remove(tmp)
 
     # Test data urls are unchanged
-    data_url = ('url(data:image/gif;base64,R0lGODlhEAAQAMQAAORHHOVSKudfOulr'
-                'SOp3WOyDZu6QdvCchPGolfO0o/XBs/fNwfjZ0frl3/zy7////wAAAAAAAA'
-                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5'
-                'BAkAABAALAAAAAAQABAAAAVVICSOZGlCQAosJ6mu7fiyZeKqNKToQGDsM8'
-                'hBADgUXoGAiqhSvp5QAnQKGIgUhwFUYLCVDFCrKUE1lBavAViFIDlTImbK'
-                'C5Gm2hB0SlBCBMQiB0UjIQA7);')
+    data_url = 'url(data:image/gif;base64,R0lGODlhEAAQAMQAAORHHOVSKudfOulr);'
 
     tmp = tempfile.mkstemp()[1]
     tmp_file = open(tmp, 'w')
@@ -401,4 +398,3 @@ def test_fix_urls():
     # Remove temporary files
     os.remove(compressed)
     os.remove(tmp)
-

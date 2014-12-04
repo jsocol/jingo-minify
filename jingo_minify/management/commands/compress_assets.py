@@ -118,8 +118,7 @@ class Command(BaseCommand):  # pragma: no cover
                 else:
                     self.minify_skipped += 1
 
-        # Cleanup
-        print 'Clean up temporary files'
+        # Clean up.
         for file in self.tmp_files:
             try:
                 os.remove(path(file))
@@ -206,7 +205,7 @@ class Command(BaseCommand):  # pragma: no cover
             filename = '%s.css' % filename
 
         if not url:
-            # Fix relative paths
+            # Fix relative paths.
             filename = self._fix_urls(filename, compressed_file)
             self.tmp_files.append(filename)
 
@@ -230,9 +229,7 @@ class Command(BaseCommand):  # pragma: no cover
         os.rename(tmp_concatted, concatted_file)
 
     def _fix_urls(self, filename, compressed_file):
-        """Fix the relative URL's in css files"""
-        print "Fixing URL's in %s" % filename
-
+        """Fix the relative URLs in css files."""
         css_content = ''
         with open(path(filename)) as css_in:
             css_content = css_in.read()
@@ -244,7 +241,7 @@ class Command(BaseCommand):  # pragma: no cover
 
         css_parsed = re.sub(r'url\(([^)]*?)\)', parse, css_content)
 
-        # Write to a temporary file
+        # Write to a temporary file.
         out_file = path(os.path.join(self.bundles_dir, '.tmp',
                                      '%s.tmp' % filename))
 
