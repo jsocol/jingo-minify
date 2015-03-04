@@ -1,0 +1,22 @@
+{
+    "name": "jingo-minify",
+    "description": "Jingo Minify is an CSS/JS bundler and minifier for use with Jingo, a connector to use Jinja2 templates with Django.",
+    "repository": {
+        "url": "https://github.com/jsocol/jingo-minify",
+        "license": "BSD 3-Clause",
+        "tests": "https://travis-ci.org/jsocol/jingo-minify"
+    },
+    "participate": {
+        "home": "https://github.com/jsocol/jingo-minify",
+        "docs": "https://github.com/jsocol/jingo-minify#running-tests"
+    },
+    "bugs": {
+        "list": "https://github.com/jsocol/jingo-minify/issues",
+        "report": "https://github.com/jsocol/jingo-minify/issues/new"
+    },
+    "keywords": [
+        "django",
+        "python",
+        "jinja"
+    ]
+}
