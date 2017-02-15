@@ -2,3 +2,4 @@ Django==1.4.5
 jingo==0.4
 -e git://github.com/jbalogh/django-nose.git@83c7867c3f90ff3c7c7471716da91b643e8b2c01#egg=django_nose-dev
 mock==1.0b1
+GitPython==0.1.7

@@ -90,6 +90,9 @@ Configure the following settings::
         # ...
     )
 
+    # The subdirectory of STATIC_ROOT that you wish to use for compiled bundles
+    BUNDLES_DIR = 'bundled'
+
     # This is the important part.
     MINIFY_BUNDLES = {
         'css': {},

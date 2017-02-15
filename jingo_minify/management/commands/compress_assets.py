@@ -30,10 +30,12 @@ class Command(BaseCommand):  # pragma: no cover
     checked_hash = {}
     bundle_hashes = {}
 
+    tmp_files = []
     missing_files = 0
     minify_skipped = 0
     cmd_errors = False
     ext_media_path = os.path.join(get_media_root(), 'external')
+    bundles_dir = getattr(settings, 'BUNDLES_DIR', '.')
 
     def update_hashes(self, update=False):
         def media_git_id(media_path):
@@ -76,12 +78,17 @@ class Command(BaseCommand):  # pragma: no cover
         for ftype, bundle in settings.MINIFY_BUNDLES.iteritems():
             for name, files in bundle.iteritems():
                 # Set the paths to the files.
-                concatted_file = path(ftype, '%s-all.%s' % (name, ftype,))
-                compressed_file = path(ftype, '%s-min.%s' % (name, ftype,))
+                concatted_file = path(self.bundles_dir, ftype,
+                                      '%s-all.%s' % (name, ftype,))
+                compressed_file = path(self.bundles_dir, ftype,
+                                       '%s-min.%s' % (name, ftype,))
+
+                if not os.path.exists(path(self.bundles_dir, ftype)):
+                    os.makedirs(path(self.bundles_dir, ftype))
 
                 files_all = []
                 for fn in files:
-                    processed = self._preprocess_file(fn)
+                    processed = self._preprocess_file(fn, compressed_file)
                     # If the file can't be processed, we skip it.
                     if processed is not None:
                         files_all.append(processed)
@@ -111,6 +118,16 @@ class Command(BaseCommand):  # pragma: no cover
                 else:
                     self.minify_skipped += 1
 
+        # Clean up.
+        for file in self.tmp_files:
+            try:
+                os.remove(path(file))
+
+                # Try to remove the temporary directory (only removed if empty)
+                os.rmdir(os.path.dirname(path(file)))
+            except OSError:
+                pass
+
         # Write out the hashes
         self.update_hashes(options.get('add_timestamp', False))
 
@@ -134,11 +151,11 @@ class Command(BaseCommand):  # pragma: no cover
         """
         if item.startswith('//'):
             return 'http:%s' % item
-        elif item.startswith(('http', 'https')):
+        elif item.startswith(('http:', 'https:')):
             return item
         return None
 
-    def _preprocess_file(self, filename):
+    def _preprocess_file(self, filename, compressed_file):
         """Preprocess files and return new filenames."""
         url = self._get_url_or_path(filename)
         if url:
@@ -186,6 +203,12 @@ class Command(BaseCommand):  # pragma: no cover
                        (settings.STYLUS_BIN, os.path.dirname(fp), fp, fp),
                        shell=True, stdout=PIPE)
             filename = '%s.css' % filename
+
+        if not url:
+            # Fix relative paths.
+            filename = self._fix_urls(filename, compressed_file)
+            self.tmp_files.append(filename)
+
         return path(filename.lstrip('/'))
 
     def _is_changed(self, concatted_file):
@@ -204,6 +227,38 @@ class Command(BaseCommand):  # pragma: no cover
         if os.path.exists(concatted_file):
             os.remove(concatted_file)
         os.rename(tmp_concatted, concatted_file)
+
+    def _fix_urls(self, filename, compressed_file):
+        """Fix the relative URLs in css files."""
+        css_content = ''
+        with open(path(filename)) as css_in:
+            css_content = css_in.read()
+
+        relpath = os.path.relpath(os.path.dirname(compressed_file),
+                                  path(os.path.dirname(filename)))
+
+        parse = lambda url: self._fix_urls_regex(url, relpath)
+
+        css_parsed = re.sub(r'url\(([^)]*?)\)', parse, css_content)
+
+        # Write to a temporary file.
+        out_file = path(os.path.join(self.bundles_dir, '.tmp',
+                                     '%s.tmp' % filename))
+
+        if not os.path.exists(os.path.dirname(out_file)):
+            os.makedirs(os.path.dirname(out_file))
+
+        with open(out_file, 'w') as css_out:
+            css_out.write(css_parsed)
+
+        return os.path.relpath(out_file, path('.'))
+
+    def _fix_urls_regex(self, url, relpath):
+        """Run over the regex; Fix relative URL's"""
+        url = url.group(1).strip('"\'')
+        if not url.startswith(('data:', 'http:', 'https:')):
+            url = os.path.relpath(url, relpath)
+        return 'url(%s)' % url
 
     def _cachebust(self, css_file, bundle_name):
         """Cache bust images.  Return a new bundle hash."""
@@ -268,7 +323,7 @@ class Command(BaseCommand):  # pragma: no cover
     def _cachebust_regex(self, img, parent):
         """Run over the regex; img is the structural regex object."""
         url = img.group(1).strip('"\'')
-        if url.startswith('data:') or url.startswith('http'):
+        if url.startswith(('data:', 'http:', 'https:')):
             return "url(%s)" % url
 
         url = url.split('?')[0]
