@@ -38,19 +38,17 @@ class Command(BaseCommand):  # pragma: no cover
     ext_media_path = os.path.join(get_media_root(), 'external')
 
     def update_hashes(self, update=False):
-        def media_git_id(media_path):
-            id = git.repo.Repo(path(media_path)).log('-1')[0].id_abbrev
-            if update:
-                # Adds a time based hash on to the build id.
-                return '%s-%s' % (id, hex(int(time.time()))[2:])
-            return id
+        path = getattr(settings, 'JINGO_MINIFY_ASSETS_GIT_ROOT', '.')
+        id = git.repo.Repo(path).log('-1')[0].id_abbrev
+        if update:
+            id = '%s-%s' % (id, hex(int(time.time()))[2:])
 
         build_id_file = os.path.realpath(os.path.join(settings.ROOT,
                                                       'build.py'))
         with open(build_id_file, 'w') as f:
-            f.write('BUILD_ID_CSS = "%s"\n' % media_git_id('css'))
-            f.write('BUILD_ID_JS = "%s"\n' % media_git_id('js'))
-            f.write('BUILD_ID_IMG = "%s"\n' % media_git_id('img'))
+            f.write('BUILD_ID_CSS = "%s"\n' % id)
+            f.write('BUILD_ID_JS = "%s"\n' % id)
+            f.write('BUILD_ID_IMG = "%s"\n' % id)
             f.write('BUNDLE_HASHES = %s\n' % self.bundle_hashes)
 
     def handle(self, **options):
