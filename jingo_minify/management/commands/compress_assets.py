@@ -37,7 +37,8 @@ class Command(BaseCommand):  # pragma: no cover
 
     def update_hashes(self, update=False):
         def media_git_id(media_path):
-            id = check_output(["git", "-C", path(media_path),
+            git_bin = getattr(settings, 'GIT_BIN', 'git')
+            id = check_output([git_bin, "-C", path(media_path),
                                "rev-parse", "--short", "HEAD"]).strip()
             if update:
                 # Adds a time based hash on to the build id.
