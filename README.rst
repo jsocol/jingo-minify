@@ -80,6 +80,9 @@ Configure the following settings::
     UGLIFY_BIN = '/path/to/uglifyjs' # Probably just 'uglify'
     CLEANCSS_BIN = '/path/to/cleancss' # Probably just 'cleancss'
 
+	# If you want to use a specific git executable, set this:
+	GIT_BIN = '/path/to/git'  # Default to 'git'
+
     # Add jingo_minify to INSTALLED_APPS
     INSTALLED_APPS = (
         # ...

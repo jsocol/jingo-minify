@@ -5,12 +5,10 @@ import re
 import shutil
 import time
 import urllib2
-from subprocess import call, PIPE
+from subprocess import call, check_output, PIPE
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-
-import git
 
 from jingo_minify.utils import get_media_root
 
@@ -39,7 +37,9 @@ class Command(BaseCommand):  # pragma: no cover
 
     def update_hashes(self, update=False):
         def media_git_id(media_path):
-            id = git.repo.Repo(path(media_path)).log('-1')[0].id_abbrev
+            git_bin = getattr(settings, 'GIT_BIN', 'git')
+            id = check_output([git_bin, "-C", path(media_path),
+                               "rev-parse", "--short", "HEAD"]).strip()
             if update:
                 # Adds a time based hash on to the build id.
                 return '%s-%s' % (id, hex(int(time.time()))[2:])
