@@ -5,7 +5,7 @@ import jingo_minify
 setup(
     name='jingo_minify',
     version=jingo_minify.__version__,
-    description='A Django app that will concat and minify JS and CSS.',
+    description='DEPRECATED - A Django app that will concat and minify JS and CSS.',
     long_description=open('README.rst').read(),
     author='Dave Dash, James Socol',
     author_email='dd@mozilla.com, james@mozilla.com',
