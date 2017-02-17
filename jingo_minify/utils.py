@@ -11,6 +11,8 @@ def get_media_root():
     ways, but projects using Django 1.4 to use the new ways.
 
     """
+    if getattr(settings, 'JINGO_MINIFY_ROOT', None):
+        return settings.JINGO_MINIFY_ROOT
     if getattr(settings, 'JINGO_MINIFY_USE_STATIC', True):
         return settings.STATIC_ROOT
     return settings.MEDIA_ROOT
@@ -37,12 +39,11 @@ def get_path(path):
     ``path`` should be relative to ``STATIC_ROOT``.
 
     """
-    debug = getattr(settings, 'DEBUG', False)
     static = getattr(settings, 'JINGO_MINIFY_USE_STATIC', True)
 
     full_path = os.path.join(get_media_root(), path)
 
-    if debug and static:
+    if static:
         found_path = static_finder(path)
         # If the path is not found by Django's static finder (like we are
         # trying to get an output path), it returns None, so fall back.

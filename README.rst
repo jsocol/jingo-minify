@@ -83,6 +83,12 @@ Configure the following settings::
 	# If you want to use a specific git executable, set this:
 	GIT_BIN = '/path/to/git'  # Default to 'git'
 
+	# If you use a different git root for assets
+	JINGO_MINIFY_ASSETS_GIT_ROOT = '.'
+
+	# If you want a different JINGO_MINIFY_ROOT than static
+	JINGO_MINIFY_ROOT = '/var/www/example.com/static/'
+	
     # Add jingo_minify to INSTALLED_APPS
     INSTALLED_APPS = (
         # ...
