@@ -13,7 +13,16 @@ from django.core.management.base import BaseCommand, CommandError
 from jingo_minify.utils import get_media_root, get_path
 
 
+try:
+    from build import BUNDLE_HASHES
+except ImportError:
+    BUNDLE_HASHES = {}
+
+
 path = lambda *a: os.path.join(get_media_root(), *a)
+
+
+unique_hash = lambda content: hashlib.md5(content).hexdigest()[:7]
 
 
 class Command(BaseCommand):  # pragma: no cover
@@ -28,7 +37,7 @@ class Command(BaseCommand):  # pragma: no cover
     do_update_only = False
 
     checked_hash = {}
-    bundle_hashes = {}
+    bundle_hashes = BUNDLE_HASHES.copy()
 
     missing_files = 0
     minify_skipped = 0
@@ -94,13 +103,19 @@ class Command(BaseCommand):  # pragma: no cover
                 self._call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
                      shell=True)
 
+                bundle_full = "%s:%s" % (ftype, name)
+
                 # Cache bust individual images in the CSS.
                 if cachebust_imgs and ftype == "css":
                     bundle_hash = self._cachebust(tmp_concatted, name)
-                    self.bundle_hashes["%s:%s" % (ftype, name)] = bundle_hash
+                else:
+                    bundle_hash = self._file_hash(tmp_concatted)
+                self.bundle_hashes[bundle_full] = bundle_hash
 
                 # Compresses the concatenations.
-                is_changed = self._is_changed(concatted_file)
+                is_changed = self._is_changed(concatted_file,
+                                              bundle_full,
+                                              bundle_hash)
                 self._clean_tmp(concatted_file)
                 if is_changed or not os.path.isfile(compressed_file):
                     self._minify(ftype, concatted_file, compressed_file)
@@ -186,14 +201,12 @@ class Command(BaseCommand):  # pragma: no cover
             fp = '%s.css' % fp
         return fp
 
-    def _is_changed(self, concatted_file):
+    def _is_changed(self, concatted_file, bundle_full, bundle_hash):
         """Check if the file has been changed."""
         tmp_concatted = '%s.tmp' % concatted_file
         if (os.path.exists(concatted_file) and
             os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted)):
-            orig_hash = self._file_hash(concatted_file)
-            temp_hash = self._file_hash(tmp_concatted)
-            return orig_hash != temp_hash
+            return BUNDLE_HASHES.get(bundle_full) != bundle_hash
         return True  # Different filesize, so it was definitely changed
 
     def _clean_tmp(self, concatted_file):
@@ -218,7 +231,7 @@ class Command(BaseCommand):  # pragma: no cover
             css_out.write(css_parsed)
 
         # Return bundle hash for cachebusting JS/CSS files.
-        file_hash = hashlib.md5(css_parsed).hexdigest()[0:7]
+        file_hash = unique_hash(css_parsed)
         self.checked_hash[css_file] = file_hash
 
         if not self.v and self.missing_files:
@@ -254,7 +267,7 @@ class Command(BaseCommand):  # pragma: no cover
         file_hash = ""
         try:
             with open(url) as f:
-                file_hash = hashlib.md5(f.read()).hexdigest()[0:7]
+                file_hash = unique_hash(f.read())
         except IOError:
             self.missing_files += 1
             if self.v:
