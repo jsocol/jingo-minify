@@ -1,9 +1,12 @@
+import os
+
 from django.conf import settings
 from django.test.utils import override_settings
+from django.core.management import call_command
 
 import jingo
 from mock import ANY, call, patch
-from nose.tools import eq_
+from nose.tools import eq_, assert_true, assert_false
 
 from .utils import get_media_root, get_media_url
 
@@ -296,3 +299,20 @@ def test_js(getmtime, time):
          for j in settings.MINIFY_BUNDLES['js']['common']])
 
     eq_(s, expected)
+
+
+@override_settings(MINIFY_BUNDLES={'css': {'test-up-to-date': ['css/test-up-to-date.css'], }},
+                   JAVA_BIN="java")
+def test_non_existing_minified_file():
+    """Non existing minified file are minified even if concatenated ones are up to date"""
+    minified_file = os.path.join(
+        settings.STATIC_ROOT,
+        'css',
+        'test-up-to-date-min.css'
+    )
+    assert_false(os.path.isfile(minified_file))
+    call_command('compress_assets')
+    assert_true(os.path.isfile(minified_file))
+    with open(minified_file) as f:
+        eq_(f.read(), "body{color:chocolate}")
+    os.remove(minified_file)
