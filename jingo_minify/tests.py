@@ -1,9 +1,12 @@
+import os
+
 from django.conf import settings
+from django.core.management import call_command
 from django.test.utils import override_settings
 
 import jingo
 from mock import ANY, call, patch
-from nose.tools import eq_
+from nose.tools import eq_, ok_
 
 from .utils import get_media_root, get_media_url
 
@@ -296,3 +299,43 @@ def test_js(getmtime, time):
          for j in settings.MINIFY_BUNDLES['js']['common']])
 
     eq_(s, expected)
+
+
+@override_settings(
+  MINIFY_BUNDLES={'css': {'common_multi': ['css/test.css', 'css/test2.css']}})
+@patch('jingo_minify.helpers.subprocess')
+def test_compress_assets_command_with_git(subprocess_mock):
+    build_id_file = os.path.realpath(os.path.join(settings.ROOT, 'build.py'))
+    os.remove(build_id_file)
+    call_command('compress_assets')
+    ok_(os.path.exists(build_id_file))
+    with open(build_id_file) as f:
+        contents_before = f.read()
+
+    # Call command a second time. We should get the same build id, since it
+    # depends on the git commit id.
+    call_command('compress_assets')
+    with open(build_id_file) as f:
+        contents_after = f.read()
+
+    eq_(contents_before, contents_after)
+
+
+@override_settings(
+  MINIFY_BUNDLES={'css': {'common_multi': ['css/test.css', 'css/test2.css']}})
+@patch('jingo_minify.helpers.subprocess')
+def test_compress_assets_command_without_git(subprocess_mock):
+    build_id_file = os.path.realpath(os.path.join(settings.ROOT, 'build.py'))
+    os.remove(build_id_file)
+    call_command('compress_assets')
+    ok_(os.path.exists(build_id_file))
+    with open(build_id_file) as f:
+        contents_before = f.read()
+
+    # Call command a second time. We should get a different build id, since it
+    # depends on a uuid.
+    call_command('compress_assets', use_uuid=True)
+    with open(build_id_file) as f:
+        contents_after = f.read()
+
+    ok_(contents_before != contents_after)

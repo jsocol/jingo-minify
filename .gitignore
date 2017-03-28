@@ -3,3 +3,5 @@ pip-log.txt
 build
 dist
 *.egg-info
+examples/minify/build.py
+examples/minify/static/css/common_multi-all.css

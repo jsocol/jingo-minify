@@ -53,3 +53,5 @@ LESS_BIN = '/usr/bin/lessc'
 
 SASS_PREPROCESS = True
 SASS_BIN = '/usr/bin/sass'
+
+JAVA_BIN = 'java'
