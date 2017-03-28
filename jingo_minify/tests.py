@@ -31,7 +31,7 @@ def test_js_helper(getmtime, time):
     """
     getmtime.return_value = 1
     time.return_value = 1
-    env = jingo.env
+    env = jingo.get_env()
 
     t = env.from_string("{{ js('common', debug=True) }}")
     s = t.render()
@@ -98,7 +98,7 @@ def test_css_helper(getmtime, time):
     """
     getmtime.return_value = 1
     time.return_value = 1
-    env = jingo.env
+    env = jingo.get_env()
 
     t = env.from_string("{{ css('common', debug=True) }}")
     s = t.render()
@@ -167,7 +167,7 @@ def test_css_helper(getmtime, time):
 
 
 def test_inline_css_helper():
-    env = jingo.env
+    env = jingo.get_env()
     t = env.from_string("{{ inline_css('common', debug=True) }}")
     s = t.render()
 
@@ -182,7 +182,7 @@ def test_inline_css_helper():
 
 
 def test_inline_css_helper_multiple_files():
-    env = jingo.env
+    env = jingo.get_env()
     t = env.from_string("{{ inline_css('common_multi', debug=True) }}")
     s = t.render()
 
@@ -198,7 +198,7 @@ def test_inline_css_helper_multiple_files():
 
 
 def test_inline_css_helper_external_url():
-    env = jingo.env
+    env = jingo.get_env()
 
     t = env.from_string("{{ inline_css('common_url', debug=True) }}")
     s = t.render()
@@ -215,23 +215,23 @@ def test_inline_css_helper_external_url():
 
 @override_settings(STATIC_ROOT='static',
                    MEDIA_ROOT='media',
-                   STATIC_URL='http://example.com/static',
-                   MEDIA_URL='http://example.com/media')
+                   STATIC_URL='http://example.com/static/',
+                   MEDIA_URL='http://example.com/media/')
 def test_no_override():
     """No override uses STATIC versions."""
     eq_(get_media_root(), 'static')
-    eq_(get_media_url(), 'http://example.com/static')
+    eq_(get_media_url(), 'http://example.com/static/')
 
 
 @override_settings(JINGO_MINIFY_USE_STATIC=False,
                    STATIC_ROOT='static',
                    MEDIA_ROOT='media',
-                   STATIC_URL='http://example.com/static',
-                   MEDIA_URL='http://example.com/media')
+                   STATIC_URL='http://example.com/static/',
+                   MEDIA_URL='http://example.com/media/')
 def test_static_override():
     """Overriding to False uses MEDIA versions."""
     eq_(get_media_root(), 'media')
-    eq_(get_media_url(), 'http://example.com/media')
+    eq_(get_media_url(), 'http://example.com/media/')
 
 
 @override_settings(STATIC_ROOT='static',
@@ -243,7 +243,7 @@ def test_static_override():
 def test_css(getmtime, time):
     getmtime.return_value = 1
     time.return_value = 1
-    env = jingo.env
+    env = jingo.get_env()
 
     t = env.from_string("{{ css('common', debug=True) }}")
     s = t.render()
@@ -267,7 +267,7 @@ def test_css(getmtime, time):
 @patch('jingo_minify.helpers.subprocess')
 @patch('__builtin__.open', spec=True)
 def test_compiled_css(open_mock, subprocess_mock, getmtime_mock, time_mock):
-    jingo.env.from_string("{{ css('compiled', debug=True) }}").render()
+    jingo.get_env().from_string("{{ css('compiled', debug=True) }}").render()
 
     eq_(subprocess_mock.Popen.mock_calls,
         [call(['lessc-bin', 'static/css/less.less'], stdout=ANY),
@@ -289,7 +289,7 @@ def test_compiled_css(open_mock, subprocess_mock, getmtime_mock, time_mock):
 def test_js(getmtime, time):
     getmtime.return_value = 1
     time.return_value = 1
-    env = jingo.env
+    env = jingo.get_env()
 
     t = env.from_string("{{ js('common', debug=True) }}")
     s = t.render()

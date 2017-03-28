@@ -9,6 +9,7 @@ MEDIA_ROOT = '/media'
 MEDIA_URL = ''
 STATIC_ROOT = path('static')
 STATIC_URL = ''
+SECRET_KEY = 'my super secret key'
 
 DATABASES = {
     'default': {
