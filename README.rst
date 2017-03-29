@@ -27,7 +27,6 @@ built-in Jinja2 backend).
 
 .. _django-jinja: https://github.com/niwinz/django-jinja
 .. _the switch: http://bluesock.org/~willkg/blog/mozilla/input_django_1_8_upgrade.html#switching-from-jingo-to-django-jinja
-.. _Jinja2: http://jinja.pocoo.org/2/
 .. _0.9: https://https://pypi.python.org/pypi/jingo/0.9.0
 .. _Jinja2 extension: https://github.com/jbalogh/jingo/blob/master/jingo/ext.py
 
@@ -215,7 +214,7 @@ README.
 
 
 Cache Busting Individual Images
-==============================
+===============================
 
 Depending on your CDN, you may need to cache-bust assets referenced in the CSS.
 To do this, add the following to your settings::
