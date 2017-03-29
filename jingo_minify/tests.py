@@ -103,10 +103,11 @@ def test_css_helper(getmtime, time):
     t = env.from_string("{{ css('common', debug=True) }}")
     s = t.render()
 
-    expected = "\n".join(
-        ['<link rel="stylesheet" media="screen,projection,tv" '
+    expected = "\n".join([
+        '<link rel="stylesheet" media="screen,projection,tv" '
         'href="%s?build=1" />' % (settings.STATIC_URL + j)
-         for j in settings.MINIFY_BUNDLES['css']['common']])
+        for j in settings.MINIFY_BUNDLES['css']['common']
+    ])
 
     eq_(s, expected)
 
@@ -302,7 +303,8 @@ def test_js(getmtime, time):
 
 
 @override_settings(
-  MINIFY_BUNDLES={'css': {'common_multi': ['css/test.css', 'css/test2.css']}})
+    MINIFY_BUNDLES={'css': {'common_multi': ['css/test.css', 'css/test2.css']}}
+)
 @patch('jingo_minify.helpers.subprocess')
 def test_compress_assets_command_with_git(subprocess_mock):
     build_id_file = os.path.realpath(os.path.join(settings.ROOT, 'build.py'))
@@ -325,7 +327,8 @@ def test_compress_assets_command_with_git(subprocess_mock):
 
 
 @override_settings(
-  MINIFY_BUNDLES={'css': {'common_multi': ['css/test.css', 'css/test2.css']}})
+    MINIFY_BUNDLES={'css': {'common_multi': ['css/test.css', 'css/test2.css']}}
+)
 @patch('jingo_minify.helpers.subprocess')
 def test_compress_assets_command_without_git(subprocess_mock):
     build_id_file = os.path.realpath(os.path.join(settings.ROOT, 'build.py'))
