@@ -2,6 +2,20 @@
 CHANGELOG
 =========
 
+0.7: March 29th, 2017
+=====================
+
+**NOTE**: This project is deprecated and no longer supported.
+
+* Fix eol on MANIFEST.in
+* Packaging fixes
+* Remove python 2.6 from tests as it's no longer supported by Django
+* Run tests on travis container-based architecture (sudo: false)
+* Don't fail tests if build_id.py doesn't exist yet
+* Run tests against the latest supported version of jingo/django
+* Add an option to generate a unique build id without using git
+
+
 0.6: February 17th, 2017
 ========================
 
