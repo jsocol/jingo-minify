@@ -2,4 +2,9 @@ include LICENSE
 include CONTRIBUTORS
 include README.rst
 include CHANGES.rst
+include run_tests.py
+include requirements.txt
+include contribute.json
 include jingo_minify/bin/yuicompressor-2.4.7.jar
+
+recursive-include examples *.css *.py

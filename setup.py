@@ -13,6 +13,9 @@ setup(
     license='BSD',
     packages=find_packages(exclude=['examples.*']),
     include_package_data=True,
+    install_requires=[
+        'jingo>=0.8',
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
@@ -22,6 +25,7 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ]
 )

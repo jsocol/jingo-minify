@@ -101,11 +101,15 @@ class Command(BaseCommand):  # pragma: no cover
                 # Concat all the files.
                 tmp_concatted = '%s.tmp' % concatted_file
                 if len(files_all) == 0:
-                    raise CommandError('No input files specified in ' +
+                    raise CommandError(
+                        'No input files specified in '
                         'MINIFY_BUNDLES["%s"]["%s"] in settings.py!' %
-                        (ftype, name))
-                self._call("cat %s > %s" % (' '.join(files_all), tmp_concatted),
-                     shell=True)
+                        (ftype, name)
+                    )
+                self._call(
+                    "cat %s > %s" % (' '.join(files_all), tmp_concatted),
+                    shell=True
+                )
 
                 # Cache bust individual images in the CSS.
                 if cachebust_imgs and ftype == "css":
@@ -119,7 +123,7 @@ class Command(BaseCommand):  # pragma: no cover
                     self._minify(ftype, concatted_file, compressed_file)
                 elif self.v:
                     print "File unchanged, skipping minification of %s" % (
-                            concatted_file)
+                        concatted_file)
                 else:
                     self.minify_skipped += 1
 
@@ -128,7 +132,7 @@ class Command(BaseCommand):  # pragma: no cover
 
         if not self.v and self.minify_skipped:
             print "Unchanged files skipped for minification: %s" % (
-                    self.minify_skipped)
+                self.minify_skipped)
         if self.cmd_errors:
             raise CommandError('one or more minify commands exited with a '
                                'non-zero status. See output above for errors.')
@@ -185,12 +189,14 @@ class Command(BaseCommand):  # pragma: no cover
                 print ' - Not a valid remote file %s' % filename
                 return None
 
-        css_bin = ((filename.endswith('.less') and settings.LESS_BIN) or
-                   (filename.endswith(('.sass', '.scss')) and settings.SASS_BIN))
+        css_bin = (
+            (filename.endswith('.less') and settings.LESS_BIN) or
+            (filename.endswith(('.sass', '.scss')) and settings.SASS_BIN)
+        )
         fp = get_path(filename)
         if css_bin:
             self._call('%s %s %s.css' % (css_bin, fp, fp),
-                 shell=True, stdout=PIPE)
+                       shell=True, stdout=PIPE)
             fp = '%s.css' % fp
         elif filename.endswith('.styl'):
             self._call('%s --include-css --include %s < %s > %s.css' %
@@ -202,8 +208,8 @@ class Command(BaseCommand):  # pragma: no cover
     def _is_changed(self, concatted_file):
         """Check if the file has been changed."""
         tmp_concatted = '%s.tmp' % concatted_file
-        if (os.path.exists(concatted_file) and
-            os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted)):
+        if ((os.path.exists(concatted_file) and
+             os.path.getsize(concatted_file) == os.path.getsize(tmp_concatted))):
             orig_hash = self._file_hash(concatted_file)
             temp_hash = self._file_hash(tmp_concatted)
             return orig_hash != temp_hash
@@ -235,9 +241,9 @@ class Command(BaseCommand):  # pragma: no cover
         self.checked_hash[css_file] = file_hash
 
         if not self.v and self.missing_files:
-           print " - Error finding %s images (-v2 for info)" % (
-                   self.missing_files,)
-           self.missing_files = 0
+            print " - Error finding %s images (-v2 for info)" % (
+                self.missing_files,)
+            self.missing_files = 0
 
         return file_hash
 
@@ -246,16 +252,16 @@ class Command(BaseCommand):  # pragma: no cover
         if ftype == 'js' and hasattr(settings, 'UGLIFY_BIN'):
             o = {'method': 'UglifyJS', 'bin': settings.UGLIFY_BIN}
             self._call("%s %s -o %s %s -m" % (o['bin'], self.v, file_out, file_in),
-                 shell=True, stdout=PIPE)
+                       shell=True, stdout=PIPE)
         elif ftype == 'css' and hasattr(settings, 'CLEANCSS_BIN'):
             o = {'method': 'clean-css', 'bin': settings.CLEANCSS_BIN}
             self._call("%s -o %s %s" % (o['bin'], file_out, file_in),
-                 shell=True, stdout=PIPE)
+                       shell=True, stdout=PIPE)
         else:
             o = {'method': 'YUI Compressor', 'bin': settings.JAVA_BIN}
             variables = (o['bin'], self.path_to_jar, self.v, file_in, file_out)
             self._call("%s -jar %s %s %s -o %s" % variables,
-                 shell=True, stdout=PIPE)
+                       shell=True, stdout=PIPE)
 
         print "Minifying %s (using %s)" % (file_in, o['method'])
 
