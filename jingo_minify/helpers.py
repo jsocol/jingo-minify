@@ -183,7 +183,7 @@ def inline_css(bundle, media=False, debug=None):
             return _build_html([css], '<link rel="stylesheet" media="%s" '
                                       'href="%%s" />' % media)
         with open(get_path(css), 'r') as f:
-            contents.append(f.read())
+            contents.append(f.read().decode('utf-8'))
 
     return _build_html(contents, '<style type="text/css" media="%s">%%s'
                                  '</style>' % media)
