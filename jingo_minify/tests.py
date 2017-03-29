@@ -306,7 +306,10 @@ def test_js(getmtime, time):
 @patch('jingo_minify.helpers.subprocess')
 def test_compress_assets_command_with_git(subprocess_mock):
     build_id_file = os.path.realpath(os.path.join(settings.ROOT, 'build.py'))
-    os.remove(build_id_file)
+    try:
+        os.remove(build_id_file)
+    except OSError:
+        pass
     call_command('compress_assets')
     ok_(os.path.exists(build_id_file))
     with open(build_id_file) as f:
@@ -326,7 +329,10 @@ def test_compress_assets_command_with_git(subprocess_mock):
 @patch('jingo_minify.helpers.subprocess')
 def test_compress_assets_command_without_git(subprocess_mock):
     build_id_file = os.path.realpath(os.path.join(settings.ROOT, 'build.py'))
-    os.remove(build_id_file)
+    try:
+        os.remove(build_id_file)
+    except OSError:
+        pass
     call_command('compress_assets')
     ok_(os.path.exists(build_id_file))
     with open(build_id_file) as f:
