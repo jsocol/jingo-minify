@@ -12,6 +12,8 @@ sys.path.insert(0, os.path.join(ROOT, 'examples'))
 
 # This can't be imported until after we've fiddled with the
 # environment.
+import django
+django.setup()
 from django.test.utils import setup_test_environment
 setup_test_environment()
 

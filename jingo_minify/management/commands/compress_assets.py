@@ -5,6 +5,7 @@ import re
 import shutil
 import time
 import urllib2
+import uuid
 from subprocess import call, check_output, PIPE
 
 from django.conf import settings
@@ -13,12 +14,16 @@ from django.core.management.base import BaseCommand, CommandError
 from jingo_minify.utils import get_media_root, get_path
 
 
-path = lambda *a: os.path.join(get_media_root(), *a)
+def path(*args):
+    return os.path.join(get_media_root(), *args)
 
 
 class Command(BaseCommand):  # pragma: no cover
     help = ("Compresses css and js assets defined in settings.MINIFY_BUNDLES")
     option_list = BaseCommand.option_list + (
+        make_option('--use-uuid', action='store_true',
+                    dest='use_uuid',
+                    help='Use a uuid as the build id instead of git.'),
         make_option('-u', '--update-only', action='store_true',
                     dest='do_update_only', help='Updates the hash only'),
         make_option('-t', '--add-timestamp', action='store_true',
@@ -35,24 +40,32 @@ class Command(BaseCommand):  # pragma: no cover
     cmd_errors = False
     ext_media_path = os.path.join(get_media_root(), 'external')
 
+    def generate_build_id(self, use_uuid):
+        if use_uuid:
+            return uuid.uuid4().hex[:8]
+        else:
+            root = getattr(settings, 'JINGO_MINIFY_ASSETS_GIT_ROOT', '.')
+            git_bin = getattr(settings, 'GIT_BIN', 'git')
+            return check_output(
+                [git_bin, "-C", root, "rev-parse", "--short", "HEAD"]).strip()
+
     def update_hashes(self, update=False):
-        path = getattr(settings, 'JINGO_MINIFY_ASSETS_GIT_ROOT', '.')
-        git_bin = getattr(settings, 'GIT_BIN', 'git')
-        id = check_output([git_bin, "-C", path,
-                           "rev-parse", "--short", "HEAD"]).strip()
         if update:
             # Adds a time based hash on to the build id.
-            id = '%s-%s' % (id, hex(int(time.time()))[2:])
+            self.build_id = '%s-%s' % (
+                self.build_id, hex(int(time.time()))[2:])
 
         build_id_file = os.path.realpath(os.path.join(settings.ROOT,
                                                       'build.py'))
         with open(build_id_file, 'w') as f:
-            f.write('BUILD_ID_CSS = "%s"\n' % id)
-            f.write('BUILD_ID_JS = "%s"\n' % id)
-            f.write('BUILD_ID_IMG = "%s"\n' % id)
+            f.write('BUILD_ID_CSS = "%s"\n' % self.build_id)
+            f.write('BUILD_ID_JS = "%s"\n' % self.build_id)
+            f.write('BUILD_ID_IMG = "%s"\n' % self.build_id)
             f.write('BUNDLE_HASHES = %s\n' % self.bundle_hashes)
 
     def handle(self, **options):
+        self.build_id = self.generate_build_id(options.get('use_uuid', False))
+
         if options.get('do_update_only', False):
             self.update_hashes(update=True)
             return
